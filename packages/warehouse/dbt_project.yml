@@ -1,0 +1,40 @@
+name: databolsa_warehouse
+version: "0.1.0"
+profile: databolsa_warehouse
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  databolsa_warehouse:
+    staging:
+      +materialized: view
+    intermediate:
+      # table, não view: os marts referenciam vários intermediates de uma vez;
+      # como view a cadeia CVM inteira (~milhões de linhas) seria re-executada
+      # N vezes por mart (estourou 20GB de temp na 1ª tentativa)
+      +materialized: table
+    marts:
+      # external = tabela materializada como Parquet em data/marts/ (external_root
+      # do profile) + view registrada no .duckdb. É o formato de serving: o futuro
+      # load_postgres.py lê esses parquets — a API nunca depende do DuckDB.
+      +materialized: external
+      +format: parquet
+
+seeds:
+  databolsa_warehouse:
+    macro_series_catalog:
+      +column_types:
+        series_key: varchar
+    inflation_targets:
+      +column_types:
+        year: integer
+    golden_values:
+      +column_types:
+        ref_date: date
+        expected_value: double
+        tolerance_pct: double

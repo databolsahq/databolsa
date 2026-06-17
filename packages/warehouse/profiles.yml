@@ -1,0 +1,14 @@
+# Commitado de propósito: não há credenciais — DuckDB é local.
+# Rode dbt a partir de packages/warehouse/ (paths relativos a este diretório).
+databolsa_warehouse:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../../data/warehouse/databolsa.duckdb
+      threads: 4
+      # marts com +materialized: external são gravados aqui como Parquet
+      external_root: ../../data/marts
+      settings:
+        memory_limit: 12GB
+        preserve_insertion_order: false

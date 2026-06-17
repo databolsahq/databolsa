@@ -1,0 +1,36 @@
+version: 2
+
+# cash_dividends_deep não tem a coluna issuer dentro do arquivo (só no path)
+# → hive_partitioning ligado (sem colisão). Nas demais o issuer/index/data já
+# vêm no arquivo → hive desligado.
+sources:
+  - name: raw_b3
+    schema: main
+    tables:
+      - name: cotahist
+        config:
+          external_location: "read_parquet('../../data/raw/b3_cotahist/year=*/data.parquet', hive_partitioning=false)"
+      - name: cotahist_options
+        config:
+          external_location: "read_parquet('../../data/raw/b3_cotahist/year=*/table=options/data.parquet', hive_partitioning=false)"
+      - name: indices
+        config:
+          external_location: "read_parquet('../../data/raw/b3_indices/index=*/year=*/data.parquet', hive_partitioning=false)"
+      - name: index_composition
+        config:
+          external_location: "read_parquet('../../data/raw/b3_index_composition/index=*/data.parquet', hive_partitioning=false)"
+      - name: ca_cash_dividends_deep
+        config:
+          external_location: "read_parquet('../../data/raw/b3_corporate_actions/dataset=cash_dividends_deep/issuer=*/data.parquet', hive_partitioning=true, union_by_name=true)"
+      - name: ca_supplement_events
+        config:
+          external_location: "read_parquet('../../data/raw/b3_corporate_actions/dataset=supplement/issuer=*/table=stock_dividends/data.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: ca_supplement_cash
+        config:
+          external_location: "read_parquet('../../data/raw/b3_corporate_actions/dataset=supplement/issuer=*/table=cash_dividends/data.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: ca_supplement_share_counts
+        config:
+          external_location: "read_parquet('../../data/raw/b3_corporate_actions/dataset=supplement/issuer=*/table=share_counts/data.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: ca_companies
+        config:
+          external_location: "read_parquet('../../data/raw/b3_corporate_actions/dataset=companies/data.parquet', hive_partitioning=false)"

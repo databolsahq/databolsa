@@ -1,0 +1,1 @@
+ALTER TABLE "prices" ADD COLUMN "close_tr" double precision;

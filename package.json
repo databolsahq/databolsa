@@ -1,0 +1,34 @@
+{
+  "name": "databolsa",
+  "version": "1.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "bun run --filter '*' typecheck",
+    "ingest": "cd packages/ingest && uv run databolsa-ingest run all",
+    "warehouse:build": "cd packages/warehouse && uv run dbt build",
+    "warehouse:test": "cd packages/warehouse && uv run dbt test",
+    "warehouse:docs": "cd packages/warehouse && uv run dbt docs generate && uv run dbt docs serve",
+    "db:up": "docker compose up -d db",
+    "db:psql": "docker compose exec db psql -U databolsa -d databolsa",
+    "db:generate": "bun run --cwd packages/db db:generate",
+    "db:migrate": "bun run --cwd packages/db db:migrate",
+    "db:studio": "bun run --cwd packages/db db:studio",
+    "db:load": "uv run scripts/load_postgres.py",
+    "redis:up": "docker compose up -d redis",
+    "api:dev": "bun --watch packages/api/src/index.ts",
+    "api:start": "bun packages/api/src/index.ts",
+    "cache:flush": "bun packages/api/src/scripts/flush-cache.ts",
+    "cli": "bun run packages/cli/src/index.ts",
+    "mcp:dev": "bun run packages/mcp/src/index.ts",
+    "mcp:inspect": "bunx @modelcontextprotocol/inspector bun run packages/mcp/src/stdio.ts",
+    "ingest:docker": "docker compose run --rm scheduler databolsa-ingest run all",
+    "scheduler:up": "docker compose up -d --build scheduler",
+    "gen:openapi": "bun run --cwd packages/api gen:openapi",
+    "gen:api-types": "bun run --cwd packages/sdk gen:schema",
+    "gen:api": "bun run gen:openapi && bun run gen:api-types"
+  }
+}

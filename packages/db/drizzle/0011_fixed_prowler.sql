@@ -1,0 +1,1 @@
+ALTER TABLE "paper_indicators" ADD COLUMN "is_financial" boolean;

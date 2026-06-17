@@ -1,0 +1,52 @@
+name: Publish packages (npm)
+# Publishes the open @databolsa packages to npm via OIDC **Trusted Publishing**
+# (no stored NPM token). Runs from the PUBLIC repo, so the build provenance points
+# at databolsahq/databolsa (the open home of these packages).
+#
+# One-time prerequisites:
+#  1. Publish v1 of each package MANUALLY (you can't configure a Trusted Publisher
+#     for a package that doesn't exist yet):
+#        cd packages/<pkg> && npm publish     # npm prompts for your 2FA OTP
+#  2. On npmjs.com, for EACH package (@databolsa/cli, @databolsa/sdk, @databolsa/mcp)
+#     → Settings → Trusted Publisher → GitHub Actions:
+#        organization: databolsahq   repository: databolsa   workflow: release.yml
+#  3. Bump the version in the package's package.json (commit) before each release.
+#     Republishing is the ONLY way to refresh the README shown on npmjs.com — a
+#     patch bump (1.0.0 → 1.0.1) is enough.
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Which package to publish
+        type: choice
+        options: [all, cli, sdk, mcp]
+        default: all
+
+permissions:
+  contents: read
+  id-token: write        # OIDC → npm trusted publishing (+ provenance)
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg: [cli, sdk, mcp]
+    steps:
+      - uses: actions/checkout@v5
+      # Every package's `prepack` builds dist with `bun build` (cli/mcp → node, sdk →
+      # browser ESM + d.ts), so bun must be on PATH before `npm publish` runs prepack.
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      # Trusted publishing (OIDC) needs npm >= 11.5.1.
+      - run: npm install -g npm@latest
+      # Workspace deps for the build (sdk's prepack runs tsc for the .d.ts).
+      - run: bun install
+      - name: Publish @databolsa/${{ matrix.pkg }}
+        if: ${{ inputs.package == 'all' || inputs.package == matrix.pkg }}
+        working-directory: packages/${{ matrix.pkg }}
+        run: npm publish --provenance   # prepack builds via bun; OIDC = auth + provenance (repo público)

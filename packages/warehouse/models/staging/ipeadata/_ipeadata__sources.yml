@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw_ipeadata
+    schema: main
+    tables:
+      - name: ipeadata
+        config:
+          external_location: "read_parquet('../../data/raw/ipeadata/series=*/data.parquet', hive_partitioning=false)"

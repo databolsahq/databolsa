@@ -1,0 +1,28 @@
+version: 2
+
+# Paths relativos a packages/warehouse/ (cwd do dbt). Gotchas do lake:
+# - SGS: séries não-revisáveis têm só series_id=N/data.parquet; as 20 revisáveis
+#   têm só series_id=N/snapshot_date=YYYY-MM-DD/data.parquet (1 vintage imutável/dia).
+# - series_id já existe DENTRO do parquet → hive_partitioning desligado;
+#   snapshot_date vem do path via filename=true + regexp no staging.
+# - Focus: schemas diferem por survey (inflacao_12m tem coluna Suavizada) → uma
+#   source table por survey.
+sources:
+  - name: raw_bcb
+    schema: main
+    tables:
+      - name: sgs_static
+        config:
+          external_location: "read_parquet('../../data/raw/bcb_sgs/series_id=*/data.parquet', hive_partitioning=false)"
+      - name: sgs_vintages
+        config:
+          external_location: "read_parquet('../../data/raw/bcb_sgs/series_id=*/snapshot_date=*/data.parquet', filename=true, hive_partitioning=false)"
+      - name: focus_anuais
+        config:
+          external_location: "read_parquet('../../data/raw/bcb_focus/survey=anuais/indicador=*/data.parquet', hive_partitioning=false)"
+      - name: focus_mensais
+        config:
+          external_location: "read_parquet('../../data/raw/bcb_focus/survey=mensais/indicador=*/data.parquet', hive_partitioning=false)"
+      - name: focus_inflacao_12m
+        config:
+          external_location: "read_parquet('../../data/raw/bcb_focus/survey=inflacao_12m/indicador=*/data.parquet', hive_partitioning=false)"

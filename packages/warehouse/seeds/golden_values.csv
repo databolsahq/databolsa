@@ -1,0 +1,4 @@
+check_id,ref_date,expected_value,tolerance_pct,note
+petr4_close,2025-06-02,31.08,0.5,Fechamento PETR4 não ajustado — conferido via brapi.dev
+selic_meta,2023-12-29,11.75,0.01,Selic meta após Copom dez/2023
+ipca_acum_12m,2023-12-01,4.62,0.5,IPCA acumulado 2023 (IBGE)
