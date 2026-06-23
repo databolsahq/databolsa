@@ -1,0 +1,1 @@
+ALTER TABLE "fii_indicators" ADD COLUMN "ffo_yield" double precision;

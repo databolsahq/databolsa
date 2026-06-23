@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw_ibge
+    schema: main
+    tables:
+      - name: sidra
+        config:
+          external_location: "read_parquet('../../data/raw/ibge_sidra/table=*/snapshot_date=*/data.parquet', filename=true, hive_partitioning=false)"

@@ -1,0 +1,40 @@
+{
+  "name": "@databolsa/api",
+  "version": "1.0.3",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    "./routes": {
+      "types": "./src/routes/index.ts",
+      "default": "./src/routes/index.ts"
+    },
+    "./client": {
+      "types": "./src/hc.ts",
+      "default": "./src/hc.ts"
+    }
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "cache:flush": "bun src/scripts/flush-cache.ts",
+    "gen:openapi": "bun src/scripts/gen-openapi.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@databolsa/contract": "workspace:*",
+    "@databolsa/db": "workspace:*",
+    "@hono/zod-validator": "^0.4.3",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.6.14",
+    "hono-openapi": "^0.4.8",
+    "ioredis": "^5.4.2",
+    "zod": "^3.24.1",
+    "zod-openapi": "^4.2.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.2",
+    "yaml": "^2.9.0"
+  }
+}

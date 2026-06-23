@@ -1,0 +1,6 @@
+cnpj,root,note
+30.306.294/0001-45,BPAC,BTG Pactual — FCA traz Codigo_Negociacao '000000' (lixo); recupera BPAC3/5/11 do COTAHIST
+08.902.291/0001-15,CMIN,CSN Mineração — FCA traz '25585' (lixo); recupera CMIN3
+33.042.730/0001-04,CSNA,CSN — FCA traz '4030' (lixo); recupera CSNA3
+59.717.553/0001-02,MLAS,Grupo Multilaser — FCA traz '90212' (lixo); recupera MLAS3
+09.346.601/0001-25,B3SA,B3 S.A. — FCA ainda lista a raiz morta BVMF (renomeada p/ B3SA3 em 2018); recupera B3SA3 do COTAHIST

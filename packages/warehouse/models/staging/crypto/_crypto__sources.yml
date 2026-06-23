@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw_crypto
+    schema: main
+    tables:
+      - name: crypto_daily
+        config:
+          external_location: "read_parquet('../../data/raw/crypto/symbol=*/interval=1d/data.parquet', hive_partitioning=false)"

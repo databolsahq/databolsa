@@ -1,0 +1,46 @@
+source,series_key,series_name,unit_raw,frequency,conversion,revisable
+bcb_sgs,1,usd_brl_ptax_venda,BRL,daily,none,false
+bcb_sgs,7,ibovespa_hist,pontos,daily,none,false
+bcb_sgs,11,selic_diaria,% a.d.,daily,pct,false
+bcb_sgs,188,inpc,% a.m.,monthly,pct,false
+bcb_sgs,189,igpm,% a.m.,monthly,pct,false
+bcb_sgs,226,tr,% a.m.,daily,pct,false
+bcb_sgs,432,selic_meta,% a.a.,daily,pct,false
+bcb_sgs,433,ipca,% a.m.,monthly,pct,false
+bcb_sgs,1178,selic_anualizada_252,% a.a.,daily,pct,false
+bcb_sgs,4189,selic_acum_mes_anualizada,% a.a.,monthly,pct,false
+bcb_sgs,4389,cdi_anualizada,% a.a.,daily,pct,false
+bcb_sgs,7415,eur_brl_media_mensal,BRL,monthly,none,false
+bcb_sgs,10813,usd_brl_ptax_compra,BRL,daily,none,false
+bcb_sgs,13522,ipca_acum_12m,%,monthly,pct,false
+bcb_sgs,3546,reservas_internacionais,USD milhões,monthly,none,true
+bcb_sgs,4380,pib_mensal_nominal,R$ milhões,monthly,none,true
+bcb_sgs,4382,pib_nominal_12m,R$ milhões,monthly,none,true
+bcb_sgs,7326,balanca_comercial_anual,USD milhões,annual,none,true
+bcb_sgs,4513,divida_liquida_pib,%,monthly,pct,true
+bcb_sgs,20622,credito_pib,%,monthly,pct,true
+bcb_sgs,20714,credito_total,R$ milhões,monthly,none,true
+bcb_sgs,20783,spread_credito,p.p.,monthly,pct,true
+bcb_sgs,21082,inadimplencia_total,%,monthly,pct,true
+bcb_sgs,13762,divida_bruta_pib,%,monthly,pct,true
+bcb_sgs,22701,transacoes_correntes,USD milhões,monthly,none,true
+bcb_sgs,22707,balanca_comercial_mensal,USD milhões,monthly,none,true
+bcb_sgs,22885,investimento_direto_pais,USD milhões,monthly,none,true
+bcb_sgs,24363,ibc_br,índice,monthly,none,true
+bcb_sgs,24364,ibc_br_dessaz,índice,monthly,none,true
+bcb_sgs,27788,m1,R$ mil,monthly,mil,true
+bcb_sgs,27810,m2,R$ mil,monthly,mil,true
+bcb_sgs,27813,m3,R$ mil,monthly,mil,true
+bcb_sgs,27815,m4,R$ mil,monthly,mil,true
+bcb_sgs,29034,comprometimento_renda_familias,%,monthly,pct,true
+bcb_sgs,29037,endividamento_familias,%,monthly,pct,true
+fred,DGS10,us_10y,%,daily,pct,false
+fred,DGS2,us_2y,%,daily,pct,false
+fred,FEDFUNDS,fed_funds,%,monthly,pct,false
+fred,SP500,sp500,índice,daily,none,false
+fred,VIXCLS,vix,índice,daily,none,false
+fred,DTWEXBGS,dxy_amplo,índice,daily,none,false
+fred,DCOILBRENTEU,brent,USD/barril,daily,none,false
+fred,PIORECRUSDM,minerio_ferro,USD/ton,monthly,none,false
+fred,PSOYBUSDQ,soja,USD/bushel,quarterly,none,false
+ipeadata,embi_br,embi_br,pontos-base,daily,bps,false

@@ -1,0 +1,17 @@
+[project]
+name = "databolsa-warehouse"
+version = "0.1.0"
+description = "Camada de transformação do DataBolsa — dbt-core + DuckDB sobre o lake Parquet"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+dependencies = [
+    "dbt-core>=1.9,<2",
+    "dbt-duckdb>=1.9,<2",
+    # modelo Python da chain de opções (IV/Greeks AMERICANOS via binomial CRR),
+    # só na cadeia vigente (~48k séries) — fora do hot-path SQL europeu.
+    "numpy>=2",
+    "pyarrow>=16",
+]
+
+[tool.uv]
+package = false
