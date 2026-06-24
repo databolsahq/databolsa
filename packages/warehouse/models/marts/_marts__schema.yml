@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: mart_macro__indicators
+    description: >
+      Todos os indicadores macro derivados (docs/machine.md) em formato longo.
+      Valores em decimal (a.a./a.m./12m) — nunca %. Tabela de serving de
+      GET /v1/macro/*.
+    columns:
+      - name: date
+        tests: [not_null]
+      - name: indicator_id
+        tests: [not_null]
+      - name: unit
+        tests: [not_null]
+      - name: lineage
+        tests: [not_null]
+
+  - name: mart_macro__regime
+    columns:
+      - name: indicator_id
+        tests:
+          - accepted_values:
+              values: [regime_growth_score, regime_inflation_score, regime_quadrante]
+
+  - name: mart_fund__indicators
+    description: >
+      49 indicadores fundamentalistas (docs/indicators.md) por (cnpj, data de
+      avaliação). Preço ainda NÃO ajustado por eventos pós-FRE (shares_quality).
+    columns:
+      - name: cnpj
+        tests: [not_null]
+      - name: eval_date
+        tests: [not_null]
+      - name: ticker
+        tests: [not_null]
+
+  - name: mart_fund__statements
+    columns:
+      - name: cnpj
+        tests: [not_null]
+      - name: ref_date
+        tests: [not_null]
+
+  - name: mart_prices__adjusted
+    description: OHLCV ajustado por eventos (events_only; proventos não descontados).
+    columns:
+      - name: adjust_quality
+        tests:
+          - not_null
+          - accepted_values:
+              values: [full, suspect_unrecorded_event, no_event_source]

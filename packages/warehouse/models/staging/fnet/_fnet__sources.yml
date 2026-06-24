@@ -1,0 +1,13 @@
+version: 2
+
+# Informe de Rendimentos de FII via B3 FNET (provento pago por cota, data-com e
+# data de pagamento reais). Substitui o proxy Rendimentos_Distribuir do informe
+# mensal CVM no DY/distribuições. Partições cnpj=/year= ficam só no path; o parquet
+# já carrega `cnpj` próprio (do XML) → hive_partitioning=false evita colisão.
+sources:
+  - name: raw_fnet
+    schema: main
+    tables:
+      - name: fii_rendimentos
+        config:
+          external_location: "read_parquet('../../data/raw/fnet_fii/cnpj=*/year=*/data.parquet', union_by_name=true, hive_partitioning=false)"

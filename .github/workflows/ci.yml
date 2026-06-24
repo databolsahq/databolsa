@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+
+  warehouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+      - name: dbt parse (smoke)
+        working-directory: packages/warehouse
+        run: uv run dbt parse
+
+  # Empacota sdk/cli/mcp (tarball == npm), instala num ambiente isolado e valida que
+  # importam/rodam + matriz de auth contra uma API LOCAL sem banco. --no-live: não
+  # depende da API pública (que exige chave) — o CI nunca quebra por causa do data-plane.
+  packages-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: bun install --frozen-lockfile
+      - run: node scripts/smoke-packages.mjs --no-live

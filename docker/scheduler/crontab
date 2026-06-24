@@ -1,0 +1,18 @@
+# DataBolsa daily refresh — read by supercronic (TZ=America/Sao_Paulo, set in compose).
+# Fires at 20:00 BRT, after the day's market/source data has settled.
+#
+#   1) ingest every source (idempotent, bounded ~1.4 GB lake — this is what stops
+#      the point-in-time vintage bleed; see docs/ROADMAP.md).
+#   2) best-effort dbt build to refresh the marts. Uses ';' (not '&&') so it runs
+#      even when ingest exits non-zero on a non-fatal validation warning. dbt's
+#      target/ and logs/ go to /tmp because /app is root-owned and read-only here.
+#   3) load the freshly-built marts into the serving Postgres (scripts/load_postgres.py)
+#      and bump the API response-cache version — without this the API serves whatever
+#      was last loaded and the daily ingest+dbt work never reaches readers. Run via
+#      `uv run` (PEP-723 inline deps: duckdb + redis); needs DATABASE_URL/REDIS_URL in
+#      the container env (set in compose.yaml).
+#
+# DATABOLSA_DATA_ROOT (=/app/data), FRED_API_KEY, DATABASE_URL and REDIS_URL come from
+# the container env. DATABOLSA_RUN_TRIGGER=cron tags the run in the ledger (data/_runs/)
+# as scheduled vs. a manual `databolsa-ingest run`; inspect with `databolsa-ingest status`.
+0 20 * * * cd /app/packages/ingest && DATABOLSA_RUN_TRIGGER=cron .venv/bin/databolsa-ingest run all ; cd /app/packages/warehouse && .venv/bin/dbt build --profiles-dir /app/packages/warehouse --target-path /tmp/dbt-target --log-path /tmp/dbt-logs ; cd /app && uv run scripts/load_postgres.py

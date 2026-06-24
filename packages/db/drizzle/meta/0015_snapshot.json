@@ -1,0 +1,3027 @@
+{
+  "id": "b6aa2a89-8778-4aee-add0-2d9f16134d8a",
+  "prevId": "9988b7c1-f302-4f59-84a0-e5e2e1329cbf",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.bdr_profile": {
+      "name": "bdr_profile",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isin": {
+          "name": "isin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "spec": {
+          "name": "spec",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_traded": {
+          "name": "first_traded",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_traded": {
+          "name": "last_traded",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sessions": {
+          "name": "sessions",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "bdr_profile_ticker_idx": {
+          "name": "bdr_profile_ticker_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.companies": {
+      "name": "companies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "cnpj": {
+          "name": "cnpj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cd_cvm": {
+          "name": "cd_cvm",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company_name": {
+          "name": "company_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sector": {
+          "name": "sector",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "issuer_status": {
+          "name": "issuer_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ownership_control": {
+          "name": "ownership_control",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tickers": {
+          "name": "tickers",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "listing_segment": {
+          "name": "listing_segment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_active_ticker": {
+          "name": "has_active_ticker",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "free_float_pct": {
+          "name": "free_float_pct",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "on_shares": {
+          "name": "on_shares",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pn_shares": {
+          "name": "pn_shares",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_shares": {
+          "name": "total_shares",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "companies_cd_cvm_key": {
+          "name": "companies_cd_cvm_key",
+          "columns": [
+            {
+              "expression": "cd_cvm",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "companies_cnpj_idx": {
+          "name": "companies_cnpj_idx",
+          "columns": [
+            {
+              "expression": "cnpj",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "companies_sector_idx": {
+          "name": "companies_sector_idx",
+          "columns": [
+            {
+              "expression": "sector",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.company_documents": {
+      "name": "company_documents",
+      "schema": "",
+      "columns": {
+        "cvm_code": {
+          "name": "cvm_code",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reference_date": {
+          "name": "reference_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "filed_at": {
+          "name": "filed_at",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "protocol": {
+          "name": "protocol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "download_url": {
+          "name": "download_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_text": {
+          "name": "has_text",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "company_documents_cvm_idx": {
+          "name": "company_documents_cvm_idx",
+          "columns": [
+            {
+              "expression": "cvm_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "filed_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.corporate_events": {
+      "name": "corporate_events",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "approved_date": {
+          "name": "approved_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ex_date": {
+          "name": "ex_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "factor": {
+          "name": "factor",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detail": {
+          "name": "detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "corporate_events_ticker_ex_idx": {
+          "name": "corporate_events_ticker_ex_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ex_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.crypto_quotes": {
+      "name": "crypto_quotes",
+      "schema": "",
+      "columns": {
+        "symbol": {
+          "name": "symbol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "open": {
+          "name": "open",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "high": {
+          "name": "high",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "low": {
+          "name": "low",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close": {
+          "name": "close",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volume": {
+          "name": "volume",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quote_volume": {
+          "name": "quote_volume",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trades": {
+          "name": "trades",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "crypto_quotes_symbol_date_idx": {
+          "name": "crypto_quotes_symbol_date_idx",
+          "columns": [
+            {
+              "expression": "symbol",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dividends": {
+      "name": "dividends",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ex_date": {
+          "name": "ex_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "value_per_share_gross": {
+          "name": "value_per_share_gross",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "value_per_share_net": {
+          "name": "value_per_share_net",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "dividends_ticker_ex_idx": {
+          "name": "dividends_ticker_ex_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ex_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fii_distributions": {
+      "name": "fii_distributions",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ex_date": {
+          "name": "ex_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "value_per_share": {
+          "name": "value_per_share",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tax_free": {
+          "name": "tax_free",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fii_distributions_ticker_idx": {
+          "name": "fii_distributions_ticker_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ex_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fii_indicators": {
+      "name": "fii_indicators",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_date": {
+          "name": "reference_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preco": {
+          "name": "preco",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vp_cota": {
+          "name": "vp_cota",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "patrimonio_liquido": {
+          "name": "patrimonio_liquido",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cotistas": {
+          "name": "cotistas",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dividend_yield_mes": {
+          "name": "dividend_yield_mes",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dist_12m": {
+          "name": "dist_12m",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dy_12m": {
+          "name": "dy_12m",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ffo_yield": {
+          "name": "ffo_yield",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pvp": {
+          "name": "pvp",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vacancia_fisica": {
+          "name": "vacancia_fisica",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cap_rate": {
+          "name": "cap_rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "qtd_imoveis": {
+          "name": "qtd_imoveis",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "area_m2": {
+          "name": "area_m2",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preco_m2": {
+          "name": "preco_m2",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aluguel_m2": {
+          "name": "aluguel_m2",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_paper": {
+          "name": "is_paper",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fii_indicators_ticker_idx": {
+          "name": "fii_indicators_ticker_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fii_profile": {
+      "name": "fii_profile",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cnpj": {
+          "name": "cnpj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "segment": {
+          "name": "segment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "administrator": {
+          "name": "administrator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manager": {
+          "name": "manager",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_paper": {
+          "name": "is_paper",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fii_profile_ticker_idx": {
+          "name": "fii_profile_ticker_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fii_reports": {
+      "name": "fii_reports",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_month": {
+          "name": "reference_month",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "net_asset_value": {
+          "name": "net_asset_value",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "value_per_share": {
+          "name": "value_per_share",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monthly_dividend_yield_pct": {
+          "name": "monthly_dividend_yield_pct",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shareholders": {
+          "name": "shareholders",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shares_issued": {
+          "name": "shares_issued",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fii_reports_ticker_idx": {
+          "name": "fii_reports_ticker_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "reference_month",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fund_indicators": {
+      "name": "fund_indicators",
+      "schema": "",
+      "columns": {
+        "cnpj": {
+          "name": "cnpj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_name": {
+          "name": "company_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eval_date": {
+          "name": "eval_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "statement_date": {
+          "name": "statement_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "market_cap": {
+          "name": "market_cap",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price": {
+          "name": "price",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price_date": {
+          "name": "price_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_shares": {
+          "name": "total_shares",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pl": {
+          "name": "pl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pvp": {
+          "name": "pvp",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "psr": {
+          "name": "psr",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_ebit": {
+          "name": "p_ebit",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_fcf": {
+          "name": "p_fcf",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_ativos": {
+          "name": "p_ativos",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_cap_giro": {
+          "name": "p_cap_giro",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_ativo_circ_liq": {
+          "name": "p_ativo_circ_liq",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ev_ebitda": {
+          "name": "ev_ebitda",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ev_ebit": {
+          "name": "ev_ebit",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lpa": {
+          "name": "lpa",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vpa": {
+          "name": "vpa",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roe": {
+          "name": "roe",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roa": {
+          "name": "roa",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roic": {
+          "name": "roic",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "margem_bruta": {
+          "name": "margem_bruta",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "margem_ebit": {
+          "name": "margem_ebit",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "margem_liquida": {
+          "name": "margem_liquida",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ebit_ativos": {
+          "name": "ebit_ativos",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "giro_ativos": {
+          "name": "giro_ativos",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "div_liquida_ebitda": {
+          "name": "div_liquida_ebitda",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "div_liquida_pl": {
+          "name": "div_liquida_pl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "div_bruta_pl": {
+          "name": "div_bruta_pl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "liquidez_corrente": {
+          "name": "liquidez_corrente",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dy_12m": {
+          "name": "dy_12m",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payout": {
+          "name": "payout",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jcp_sobre_total": {
+          "name": "jcp_sobre_total",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revenue_cagr_3y": {
+          "name": "revenue_cagr_3y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revenue_cagr_5y": {
+          "name": "revenue_cagr_5y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "earnings_cagr_3y": {
+          "name": "earnings_cagr_3y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "earnings_cagr_5y": {
+          "name": "earnings_cagr_5y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ebitda_cagr_3y": {
+          "name": "ebitda_cagr_3y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "negative_equity": {
+          "name": "negative_equity",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shares_quality": {
+          "name": "shares_quality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quarters_available": {
+          "name": "quarters_available",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fund_indicators_ticker_idx": {
+          "name": "fund_indicators_ticker_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fund_indicators_eval_date_idx": {
+          "name": "fund_indicators_eval_date_idx",
+          "columns": [
+            {
+              "expression": "eval_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fund_indicators_ticker_eval_idx": {
+          "name": "fund_indicators_ticker_eval_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "eval_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "fund_indicators_cnpj_eval_date_pk": {
+          "name": "fund_indicators_cnpj_eval_date_pk",
+          "columns": [
+            "cnpj",
+            "eval_date"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fund_statements": {
+      "name": "fund_statements",
+      "schema": "",
+      "columns": {
+        "cnpj": {
+          "name": "cnpj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cd_cvm": {
+          "name": "cd_cvm",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company_name": {
+          "name": "company_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ref_date": {
+          "name": "ref_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quarters_available": {
+          "name": "quarters_available",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_latest": {
+          "name": "is_latest",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revenue_ttm": {
+          "name": "revenue_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gross_profit_ttm": {
+          "name": "gross_profit_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ebit_ttm": {
+          "name": "ebit_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ebitda_ttm": {
+          "name": "ebitda_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "net_income_ttm": {
+          "name": "net_income_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ocf_ttm": {
+          "name": "ocf_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fcf_ttm": {
+          "name": "fcf_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dna_ttm": {
+          "name": "dna_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capex_ttm": {
+          "name": "capex_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_assets": {
+          "name": "total_assets",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_assets": {
+          "name": "current_assets",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cash": {
+          "name": "cash",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "st_investments": {
+          "name": "st_investments",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_liabilities": {
+          "name": "current_liabilities",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "noncurrent_liabilities": {
+          "name": "noncurrent_liabilities",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "st_debt": {
+          "name": "st_debt",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lt_debt": {
+          "name": "lt_debt",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gross_debt": {
+          "name": "gross_debt",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "net_debt": {
+          "name": "net_debt",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "equity": {
+          "name": "equity",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "working_capital": {
+          "name": "working_capital",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "net_current_assets": {
+          "name": "net_current_assets",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invested_capital": {
+          "name": "invested_capital",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nopat_ttm": {
+          "name": "nopat_ttm",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "fund_statements_cnpj_latest_idx": {
+          "name": "fund_statements_cnpj_latest_idx",
+          "columns": [
+            {
+              "expression": "cnpj",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_latest",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "fund_statements_cnpj_ref_date_scope_pk": {
+          "name": "fund_statements_cnpj_ref_date_scope_pk",
+          "columns": [
+            "cnpj",
+            "ref_date",
+            "scope"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.index_quotes": {
+      "name": "index_quotes",
+      "schema": "",
+      "columns": {
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "close": {
+          "name": "close",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "index_quotes_code_date_idx": {
+          "name": "index_quotes_code_date_idx",
+          "columns": [
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.insider_moves": {
+      "name": "insider_moves",
+      "schema": "",
+      "columns": {
+        "cnpj": {
+          "name": "cnpj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_month": {
+          "name": "reference_month",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "net_shares": {
+          "name": "net_shares",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "net_value_brl": {
+          "name": "net_value_brl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "buy_value_brl": {
+          "name": "buy_value_brl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sell_value_brl": {
+          "name": "sell_value_brl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "insider_moves_cnpj_idx": {
+          "name": "insider_moves_cnpj_idx",
+          "columns": [
+            {
+              "expression": "cnpj",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "reference_month",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.macro_cross_asset": {
+      "name": "macro_cross_asset",
+      "schema": "",
+      "columns": {
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "indicator_id": {
+          "name": "indicator_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lineage": {
+          "name": "lineage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "macro_cross_asset_indicator_id_date_pk": {
+          "name": "macro_cross_asset_indicator_id_date_pk",
+          "columns": [
+            "indicator_id",
+            "date"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.macro_expectations": {
+      "name": "macro_expectations",
+      "schema": "",
+      "columns": {
+        "indicator": {
+          "name": "indicator",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "survey_date": {
+          "name": "survey_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "median": {
+          "name": "median",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mean": {
+          "name": "mean",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "std_dev": {
+          "name": "std_dev",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "respondents": {
+          "name": "respondents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "base": {
+          "name": "base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "macro_expectations_idx": {
+          "name": "macro_expectations_idx",
+          "columns": [
+            {
+              "expression": "indicator",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "reference",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "survey_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.macro_indicators": {
+      "name": "macro_indicators",
+      "schema": "",
+      "columns": {
+        "section": {
+          "name": "section",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "indicator_id": {
+          "name": "indicator_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lineage": {
+          "name": "lineage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "macro_indicators_section_idx": {
+          "name": "macro_indicators_section_idx",
+          "columns": [
+            {
+              "expression": "section",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "macro_indicators_indicator_date_idx": {
+          "name": "macro_indicators_indicator_date_idx",
+          "columns": [
+            {
+              "expression": "indicator_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "macro_indicators_section_indicator_id_date_pk": {
+          "name": "macro_indicators_section_indicator_id_date_pk",
+          "columns": [
+            "section",
+            "indicator_id",
+            "date"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.macro_regime": {
+      "name": "macro_regime",
+      "schema": "",
+      "columns": {
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "indicator_id": {
+          "name": "indicator_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lineage": {
+          "name": "lineage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "macro_regime_indicator_id_date_pk": {
+          "name": "macro_regime_indicator_id_date_pk",
+          "columns": [
+            "indicator_id",
+            "date"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.macro_series": {
+      "name": "macro_series",
+      "schema": "",
+      "columns": {
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "series_id": {
+          "name": "series_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "macro_series_idx": {
+          "name": "macro_series_idx",
+          "columns": [
+            {
+              "expression": "source",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "series_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.macro_series_catalog": {
+      "name": "macro_series_catalog",
+      "schema": "",
+      "columns": {
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "series_id": {
+          "name": "series_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "frequency": {
+          "name": "frequency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_date": {
+          "name": "first_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_date": {
+          "name": "last_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "macro_series_catalog_idx": {
+          "name": "macro_series_catalog_idx",
+          "columns": [
+            {
+              "expression": "source",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "series_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.options_chain": {
+      "name": "options_chain",
+      "schema": "",
+      "columns": {
+        "option_ticker": {
+          "name": "option_ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "underlying_ticker": {
+          "name": "underlying_ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "underlying_root": {
+          "name": "underlying_root",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "option_type": {
+          "name": "option_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "strike": {
+          "name": "strike",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expiry": {
+          "name": "expiry",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last": {
+          "name": "last",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volume_brl": {
+          "name": "volume_brl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trades": {
+          "name": "trades",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "underlying_spot": {
+          "name": "underlying_spot",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "days_to_expiry": {
+          "name": "days_to_expiry",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moneyness": {
+          "name": "moneyness",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "intrinsic": {
+          "name": "intrinsic",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "time_value": {
+          "name": "time_value",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "options_chain_underlying_idx": {
+          "name": "options_chain_underlying_idx",
+          "columns": [
+            {
+              "expression": "underlying_ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expiry",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "options_chain_option_idx": {
+          "name": "options_chain_option_idx",
+          "columns": [
+            {
+              "expression": "option_ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.options_quotes": {
+      "name": "options_quotes",
+      "schema": "",
+      "columns": {
+        "option_ticker": {
+          "name": "option_ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "underlying_ticker": {
+          "name": "underlying_ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "underlying_root": {
+          "name": "underlying_root",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "option_type": {
+          "name": "option_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "strike": {
+          "name": "strike",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expiry": {
+          "name": "expiry",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "open": {
+          "name": "open",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "high": {
+          "name": "high",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "low": {
+          "name": "low",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last": {
+          "name": "last",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volume_brl": {
+          "name": "volume_brl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trades": {
+          "name": "trades",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "underlying_spot": {
+          "name": "underlying_spot",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "days_to_expiry": {
+          "name": "days_to_expiry",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moneyness": {
+          "name": "moneyness",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "intrinsic": {
+          "name": "intrinsic",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "time_value": {
+          "name": "time_value",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "options_quotes_option_date_idx": {
+          "name": "options_quotes_option_date_idx",
+          "columns": [
+            {
+              "expression": "option_ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "options_quotes_underlying_date_idx": {
+          "name": "options_quotes_underlying_date_idx",
+          "columns": [
+            {
+              "expression": "underlying_ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.paper_indicators": {
+      "name": "paper_indicators",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "class_group": {
+          "name": "class_group",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cnpj": {
+          "name": "cnpj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_name": {
+          "name": "company_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eval_date": {
+          "name": "eval_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "statement_date": {
+          "name": "statement_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price": {
+          "name": "price",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price_date": {
+          "name": "price_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "market_cap": {
+          "name": "market_cap",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company_market_cap": {
+          "name": "company_market_cap",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_shares": {
+          "name": "total_shares",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pl": {
+          "name": "pl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pvp": {
+          "name": "pvp",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "psr": {
+          "name": "psr",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_ebit": {
+          "name": "p_ebit",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_fcf": {
+          "name": "p_fcf",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_ativos": {
+          "name": "p_ativos",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_cap_giro": {
+          "name": "p_cap_giro",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p_ativo_circ_liq": {
+          "name": "p_ativo_circ_liq",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ev_ebitda": {
+          "name": "ev_ebitda",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ev_ebit": {
+          "name": "ev_ebit",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dy_12m": {
+          "name": "dy_12m",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dps_12m": {
+          "name": "dps_12m",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payout": {
+          "name": "payout",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jcp_sobre_total": {
+          "name": "jcp_sobre_total",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lpa": {
+          "name": "lpa",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vpa": {
+          "name": "vpa",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roe": {
+          "name": "roe",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roa": {
+          "name": "roa",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roic": {
+          "name": "roic",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "margem_bruta": {
+          "name": "margem_bruta",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "margem_ebit": {
+          "name": "margem_ebit",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "margem_liquida": {
+          "name": "margem_liquida",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ebit_ativos": {
+          "name": "ebit_ativos",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "giro_ativos": {
+          "name": "giro_ativos",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "div_liquida_ebitda": {
+          "name": "div_liquida_ebitda",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "div_liquida_pl": {
+          "name": "div_liquida_pl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "div_bruta_pl": {
+          "name": "div_bruta_pl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "liquidez_corrente": {
+          "name": "liquidez_corrente",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revenue_cagr_3y": {
+          "name": "revenue_cagr_3y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revenue_cagr_5y": {
+          "name": "revenue_cagr_5y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "earnings_cagr_3y": {
+          "name": "earnings_cagr_3y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "earnings_cagr_5y": {
+          "name": "earnings_cagr_5y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ebitda_cagr_3y": {
+          "name": "ebitda_cagr_3y",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "negative_equity": {
+          "name": "negative_equity",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shares_quality": {
+          "name": "shares_quality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quarters_available": {
+          "name": "quarters_available",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_financial": {
+          "name": "is_financial",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "paper_indicators_cnpj_idx": {
+          "name": "paper_indicators_cnpj_idx",
+          "columns": [
+            {
+              "expression": "cnpj",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "paper_indicators_eval_date_idx": {
+          "name": "paper_indicators_eval_date_idx",
+          "columns": [
+            {
+              "expression": "eval_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "paper_indicators_ticker_eval_idx": {
+          "name": "paper_indicators_ticker_eval_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "eval_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "paper_indicators_ticker_eval_date_pk": {
+          "name": "paper_indicators_ticker_eval_date_pk",
+          "columns": [
+            "ticker",
+            "eval_date"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.price_stats": {
+      "name": "price_stats",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "reference_date": {
+          "name": "reference_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retorno_12m": {
+          "name": "retorno_12m",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volatilidade": {
+          "name": "volatilidade",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beta": {
+          "name": "beta",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volume_medio_2m": {
+          "name": "volume_medio_2m",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.prices": {
+      "name": "prices",
+      "schema": "",
+      "columns": {
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ticker": {
+          "name": "ticker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "codbdi": {
+          "name": "codbdi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isin": {
+          "name": "isin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "open_adj": {
+          "name": "open_adj",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "high_adj": {
+          "name": "high_adj",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "low_adj": {
+          "name": "low_adj",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close_adj": {
+          "name": "close_adj",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close_tr": {
+          "name": "close_tr",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close_raw": {
+          "name": "close_raw",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adj_factor": {
+          "name": "adj_factor",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volume_brl": {
+          "name": "volume_brl",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adjust_type": {
+          "name": "adjust_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adjust_quality": {
+          "name": "adjust_quality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "prices_ticker_date_idx": {
+          "name": "prices_ticker_date_idx",
+          "columns": [
+            {
+              "expression": "ticker",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "prices_ticker_date_pk": {
+          "name": "prices_ticker_date_pk",
+          "columns": [
+            "ticker",
+            "date"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tesouro_bonds": {
+      "name": "tesouro_bonds",
+      "schema": "",
+      "columns": {
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "maturity": {
+          "name": "maturity",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "buy_rate": {
+          "name": "buy_rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sell_rate": {
+          "name": "sell_rate",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "buy_price": {
+          "name": "buy_price",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sell_price": {
+          "name": "sell_price",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "maturity_years": {
+          "name": "maturity_years",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "tesouro_bonds_date_idx": {
+          "name": "tesouro_bonds_date_idx",
+          "columns": [
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tesouro_bonds_type_idx": {
+          "name": "tesouro_bonds_type_idx",
+          "columns": [
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

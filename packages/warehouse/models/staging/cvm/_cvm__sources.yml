@@ -1,0 +1,40 @@
+version: 2
+
+# dataset=cad tem schema próprio e profundidade diferente → source separada.
+# DFP+ITR via lista de globs (hive: dataset/year/statement/scope vêm do path).
+sources:
+  - name: raw_cvm
+    schema: main
+    tables:
+      - name: dfp_itr
+        config:
+          external_location: "read_parquet(['../../data/raw/cvm_dfp_itr/dataset=dfp/year=*/statement=*/scope=*/data.parquet', '../../data/raw/cvm_dfp_itr/dataset=itr/year=*/statement=*/scope=*/data.parquet'], hive_partitioning=true, union_by_name=true)"
+      - name: dfp_itr_cad
+        config:
+          external_location: "read_parquet('../../data/raw/cvm_dfp_itr/dataset=cad/data.parquet', hive_partitioning=false)"
+      - name: fca_valor_mobiliario
+        config:
+          external_location: "read_parquet('../../data/raw/cvm_fca/year=*/table=valor_mobiliario/data.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: fre_capital_social
+        config:
+          external_location: "read_parquet('../../data/raw/cvm_fre/year=*/table=capital_social/data.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: fre_distribuicao_capital
+        config:
+          external_location: "read_parquet('../../data/raw/cvm_fre/year=*/table=distribuicao_capital/data.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: vlmo
+        config:
+          external_location: "read_parquet('../../data/raw/cvm_vlmo/**/*.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: ipe
+        config:
+          external_location: "read_parquet('../../data/raw/cvm_ipe/**/*.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: fii_inf_mensal
+        config:
+          external_location: "read_parquet('../../data/raw/cvm_fii/dataset=inf_mensal/**/*.parquet', union_by_name=true, hive_partitioning=false)"
+      - name: fii_registro
+        config:
+          # hive_partitioning=true expõe snapshot_date (chave de partição do path)
+          # para escolher o snapshot diário mais recente por fundo.
+          external_location: "read_parquet('../../data/raw/cvm_fii/dataset=registro/**/*.parquet', union_by_name=true, hive_partitioning=true)"
+      - name: fii_inf_trimestral
+        config:
+          external_location: "read_parquet('../../data/raw/cvm_fii/dataset=inf_trimestral/**/*.parquet', union_by_name=true, hive_partitioning=false)"

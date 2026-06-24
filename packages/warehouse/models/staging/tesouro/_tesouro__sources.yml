@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw_tesouro
+    schema: main
+    tables:
+      - name: tesouro_direto
+        config:
+          external_location: "read_parquet('../../data/raw/tesouro_direto/data.parquet', hive_partitioning=false)"

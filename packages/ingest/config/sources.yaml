@@ -1,0 +1,255 @@
+# DataBolsa — configuração dos extratores (PoC)
+# IDs de séries, anos e URLs. Detalhes públicos de cada fonte: docs/sources.md
+
+bcb_sgs:
+  start_date: "2000-01-01"
+  throttle_seconds: 0.5
+  series:
+    # Política monetária e juros
+    # (IDs verificados ao vivo em 2026-06: 432=meta Copom, 11=taxa diária — o
+    # par estava trocado em fontes públicas; ver docs/sources.md)
+    - { id: 432,   name: selic_meta,            unit: "% a.a.",      frequency: daily }
+    - { id: 11,    name: selic_diaria,          unit: "% a.d.",      frequency: daily }
+    - { id: 4189,  name: selic_acum_mes_anualizada, unit: "% a.a.",  frequency: monthly }
+    - { id: 4389,  name: cdi_anualizada,        unit: "% a.a.",      frequency: daily }
+    - { id: 226,   name: tr,                    unit: "% a.m.",      frequency: daily }
+    # Inflação
+    - { id: 433,   name: ipca,                  unit: "% a.m.",      frequency: monthly }
+    - { id: 13522, name: ipca_acum_12m,         unit: "%",           frequency: monthly }
+    - { id: 189,   name: igpm,                  unit: "% a.m.",      frequency: monthly }
+    - { id: 188,   name: inpc,                  unit: "% a.m.",      frequency: monthly }
+    # Câmbio — PTAX (CORRIGIDO 2026-06: 1 = VENDA, 10813 = COMPRA; revisão
+    # adversarial verificou venda > compra em 100% das datas. PTAX venda é a
+    # taxa de liquidação de contratos)
+    - { id: 1,     name: usd_brl_ptax_venda,    unit: "BRL",         frequency: daily }
+    - { id: 10813, name: usd_brl_ptax_compra,   unit: "BRL",         frequency: daily }
+    - { id: 7415,  name: eur_brl_media_mensal,  unit: "BRL",         frequency: monthly }
+    # Mercado — IBOV diário oficial do SGS (1968–2019; BCB descontinuou em set/2019;
+    # níveis pós-2019: o BCB descontinuou esta série; use b3_indices para índices atuais.
+    - { id: 7,     name: ibovespa_hist,         unit: "pontos",      frequency: daily, discontinued: true }
+    # Crédito (engrenagem de crédito — Dalio)
+    - { id: 20714, name: credito_total,         unit: "R$ milhões",  frequency: monthly, revisable: true }
+    - { id: 21082, name: inadimplencia_total,   unit: "%",           frequency: monthly, revisable: true }
+    # Fiscal: IDs conferidos contra a API do BCB; manter DLSP e DBGG pelos
+    # nomes canonicos abaixo, não por rótulos de referências antigas.
+    - { id: 4513,  name: divida_liquida_pib,    unit: "%",           frequency: monthly, revisable: true }
+    - { id: 13762, name: divida_bruta_pib,      unit: "%",           frequency: monthly, revisable: true }
+    # Setor externo (CORRIGIDO 2026-06-12: 4380 é o PIB MENSAL nominal — mantido
+    # com o nome certo; reservas internacionais mensais = 3546, USD 371 bi ✓)
+    - { id: 3546,  name: reservas_internacionais, unit: "USD milhões", frequency: monthly, revisable: true }
+    - { id: 4380,  name: pib_mensal_nominal,    unit: "R$ milhões",  frequency: monthly, revisable: true }
+    - { id: 7326,  name: balanca_comercial_anual, unit: "USD milhões", frequency: annual, revisable: true }
+    - { id: 22701, name: transacoes_correntes,  unit: "USD milhões", frequency: monthly, revisable: true }
+    - { id: 22885, name: investimento_direto_pais, unit: "USD milhões", frequency: monthly, revisable: true }
+    # Atividade e agregados monetários
+    # (relabels verificados por valor/início da série em 2026-06: 24363/24364 =
+    # par IBC-Br obs/dessaz desde 2003; 22707 = balança comercial MENSAL)
+    - { id: 24363, name: ibc_br,                unit: "índice",      frequency: monthly, revisable: true }
+    - { id: 24364, name: ibc_br_dessaz,         unit: "índice",      frequency: monthly, revisable: true }
+    - { id: 22707, name: balanca_comercial_mensal, unit: "USD milhões", frequency: monthly, revisable: true }
+    # Agregados monetários: SALDOS em fim de período, R$ MIL (não milhões!).
+    # CORRIGIDO 2026-06-12: 27574–27577 eram índices (~437 em 2026), não saldos.
+    # Verificado ao vivo abr/2026: M1 629bi, M2 7,46tri, M3 13,6tri, M4 15,3tri.
+    - { id: 27788, name: m1,                    unit: "R$ mil",      frequency: monthly, revisable: true }
+    - { id: 27810, name: m2,                    unit: "R$ mil",      frequency: monthly, revisable: true }
+    - { id: 27813, name: m3,                    unit: "R$ mil",      frequency: monthly, revisable: true }
+    - { id: 27815, name: m4,                    unit: "R$ mil",      frequency: monthly, revisable: true }
+    # Engrenagens Dalio: ciclo de crédito/dívida (valores verificados ao vivo)
+    - { id: 1178,  name: selic_anualizada_252,  unit: "% a.a.",      frequency: daily }
+    - { id: 20622, name: credito_pib,           unit: "%",           frequency: monthly, revisable: true }
+    - { id: 20783, name: spread_credito,        unit: "p.p.",        frequency: monthly, revisable: true }
+    - { id: 29037, name: endividamento_familias, unit: "%",          frequency: monthly, revisable: true }
+    - { id: 29034, name: comprometimento_renda_familias, unit: "%",  frequency: monthly, revisable: true }
+    - { id: 4382,  name: pib_nominal_12m,       unit: "R$ milhões",  frequency: monthly, revisable: true }
+
+bcb_focus:
+  start_date: "2015-01-01"
+  surveys:
+    anuais:
+      resource: ExpectativasMercadoAnuais
+      indicators: ["IPCA", "Selic", "PIB Total", "Câmbio"]
+    mensais:
+      resource: ExpectativaMercadoMensais
+      indicators: ["IPCA", "Câmbio"]
+    # Horizonte rolante de 12 meses (campo Suavizada S/N) — o insumo CORRETO
+    # para juro real ex-ante (a mediana ano-calendário erra o horizonte)
+    inflacao_12m:
+      resource: ExpectativasMercadoInflacao12Meses
+      indicators: ["IPCA", "IGP-M"]
+
+b3_cotahist:
+  base_url: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/"
+  # COTAHIST existe desde 1998 (verificado ao vivo)
+  start_year: 1998
+  end_year: 2026
+  # 02 = lote padrão (ações), 12 = FII, 14 = ETF (ESPECI CI),
+  # 34 = BDR não patrocinado (DRN), 35 = BDR patrocinado (DR1/DR2/DR3)
+  # — verificado no arquivo real em 2026-06
+  codbdi: ["02", "12", "14", "34", "35"]
+
+cvm_dfp_itr:
+  base_url: "https://dados.cvm.gov.br/dados/CIA_ABERTA/"
+  datasets: [dfp, itr]
+  # DFP existe desde 2010, ITR desde 2011 (anos anteriores são 404 — verificado)
+  years_dfp: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+  years_itr: [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+  statements: [BPA, BPP, DRE, DFC_MD, DFC_MI, DVA]
+
+# FCA/FRE desde 2010: mata survivorship bias no mapa ticker↔CNPJ (delistadas)
+# e dá nº de ações histórico (valuation point-in-time) — revisão adversarial
+cvm_fca:
+  base_url: "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/"
+  years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+  tables: [valor_mobiliario, geral]
+
+cvm_fre:
+  base_url: "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FRE/DADOS/"
+  years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+  tables: [capital_social, distribuicao_capital]
+
+cvm_ipe:
+  base_url: "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/IPE/DADOS/"
+  years: [2023, 2024, 2025, 2026]
+  # V1 sem download de documentos (pilar LLM/RAG adiado): com sample_companies
+  # comentado, o conector ainda indexa os metadados IPE (mart_cvm__documents) mas
+  # NÃO baixa os PDFs (~352 MB). Reativar quando o disco de documentos chegar.
+  # sample_companies:
+  #   - { cvm_code: 9512,  name: PETROBRAS }
+  #   - { cvm_code: 4170,  name: VALE }
+  #   - { cvm_code: 19348, name: ITAU_UNIBANCO }
+  #   - { cvm_code: 1023,  name: BANCO_DO_BRASIL }
+  #   - { cvm_code: 23264, name: AMBEV }
+  #   - { cvm_code: 5410,  name: WEG }
+  #   - { cvm_code: 21610, name: B3 }
+  #   - { cvm_code: 906,   name: BRADESCO }
+  #   - { cvm_code: 2437,  name: AXIA_ELETROBRAS }
+  #   - { cvm_code: 22470, name: MAGAZINE_LUIZA }
+  doc_categories: ["Fato Relevante", "Dados Econômico-Financeiros"]
+  docs_per_company: 20
+
+cvm_fii:
+  registry_url: "https://dados.cvm.gov.br/dados/FI/CAD/DADOS/registro_fundo_classe.zip"
+  informes_base_url: "https://dados.cvm.gov.br/dados/FII/DOC/INF_MENSAL/DADOS/"
+  informes_trimestrais_base_url: "https://dados.cvm.gov.br/dados/FII/DOC/INF_TRIMESTRAL/DADOS/"
+  # informes existem desde 2016 (verificado); trimestral traz vacância (mensal não tem)
+  years_mensal: [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+  years_trimestral: [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+
+# Informe de Rendimentos de FII (provento pago por cota, data-com/pagamento reais)
+# via B3 FNET — fonte de fato que substitui o proxy "Rendimentos_Distribuir" do
+# informe mensal CVM no cálculo de DY/distribuições.
+fnet_fii:
+  base_url: "https://fnet.bmfbovespa.com.br/fnet/publico"
+  # estruturados de rendimento existem desde 2017 (verificado p/ CPTS11)
+  start_year: 2017
+  throttle_seconds: 0.4
+  # API por-documento (~35k GETs no backfill frio) → o conector roda CONCORRENTE por
+  # fundo p/ caber na janela do agendador diário (serial daria ~5h; 12 threads ≈ ~25min).
+  workers: 12
+  # cnpjs: [...]  # opcional: restringe o universo (default = todos os FII do informe mensal CVM)
+
+# Insider trading legalizado (CVM 44): movimentações de administradores/controladores
+cvm_vlmo:
+  base_url: "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/VLMO/DADOS/"
+  years: [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+
+# Níveis diários de índices via API do site da B3 (indexStatisticsProxy) —
+# IBOV pós-2019 não existe em fonte aberta alternativa (SGS 7 morreu em set/2019)
+b3_indices:
+  base_url: "https://sistemaswebb3-listados.b3.com.br/indexStatisticsProxy/IndexCall/"
+  throttle_seconds: 0.3
+  # start_year = piso de dados confirmado no GetPortfolioDay (probe direto). Anos sem
+  # pregão para o índice retornam results vazio → SourceNotAvailable (negative-cached).
+  indices:
+    - { name: IBOV, start_year: 1968 }   # Ibovespa
+    - { name: IFIX, start_year: 2011 }   # Fundos imobiliários
+    # amplos / estilo
+    - { name: IBXX, start_year: 1995 }   # IBrX 100 (mercado amplo)
+    - { name: IBXL, start_year: 1998 }   # IBrX 50
+    - { name: IBRA, start_year: 2006 }   # Brasil Amplo
+    - { name: IDIV, start_year: 2006 }   # Dividendos
+    - { name: MLCX, start_year: 2006 }   # MidLarge Cap
+    - { name: SMLL, start_year: 2006 }   # Small Cap
+    - { name: IGCX, start_year: 2001 }   # Governança corporativa
+    - { name: ITAG, start_year: 2004 }   # Tag along diferenciado
+    # setoriais
+    - { name: IFNC, start_year: 2005 }   # Financeiro (base 28/12/2004 = 100; 2004 só o stub da base → falha min-100)
+    - { name: ICON, start_year: 2007 }   # Consumo (base fim de 2006 = 1 pregão → falha min-100)
+    - { name: IEEX, start_year: 1995 }   # Energia elétrica
+    - { name: IMOB, start_year: 2008 }   # Imobiliário
+    - { name: UTIL, start_year: 2006 }   # Utilidade pública
+    - { name: IMAT, start_year: 2006 }   # Materiais básicos
+    - { name: INDX, start_year: 2001 }   # Industrial
+
+# Carteira teórica VIGENTE dos índices (constituintes + peso + qtde teórica) via
+# indexProxy/GetPortfolioDay. Irmã de b3_indices (níveis); rebalanceia jan/mai/set.
+b3_index_composition:
+  base_url: "https://sistemaswebb3-listados.b3.com.br/indexProxy/indexCall/"
+  throttle_seconds: 0.3
+  indices: [IBOV, IFIX, IBXX, IBXL, IBRA, IDIV, MLCX, SMLL, IGCX, ITAG, IFNC, ICON, IEEX, IMOB, UTIL, IMAT, INDX]
+
+# Atas do COPOM (texto que move o juro — pilar LLM)
+bcb_copom:
+  base_url: "https://www.bcb.gov.br/api/servico/sitebcb/"
+  site_base_url: "https://www.bcb.gov.br"
+
+b3_intraday:
+  # API do site da B3 — minuto a minuto do pregão corrente, delay ~15 min
+  base_url: "https://cotacao.b3.com.br/mds/api/v1/DailyFluctuationHistory/"
+  watchlist: [IBOV, PETR4, VALE3, ITUB4, BBAS3, WEGE3, MGLU3, BOVA11, IVVB11, HASH11, AAPL34, HGLG11]
+
+crypto:
+  # Binance API pública (sem chave) — pares em BRL
+  # USDTBRL = câmbio implícito 24/7 (proxy do dólar fora do horário da PTAX)
+  base_url: "https://api.binance.com/api/v3/klines"
+  symbols: [BTCBRL, ETHBRL, SOLBRL, USDTBRL]
+  daily_start: "2019-01-01"
+
+ipeadata:
+  base_url: "http://www.ipeadata.gov.br/api/odata4/"
+  series:
+    - { code: JPM366_EMBI366, name: embi_br, unit: "pontos-base", frequency: daily }
+
+ibge_sidra:
+  base_url: "https://apisidra.ibge.gov.br/values"
+  # todas as séries do IBGE são revisadas (PNAD/PIB/PIM) — vintages diários
+  tables:
+    - { table: 6381, variable: 4099,  name: desemprego_pnad,    revisable: true, description: "Taxa de desocupação PNAD Contínua (trimestre móvel)" }
+    - { table: 5932, variable: 6563,  name: pib_var_trimestral, revisable: true, description: "PIB variação trimestral (%)" }
+    # GOTCHA: a tabela de produção industrial citada em referências antigas (8159)
+    # retorna 400; a vigente é a 8888 (PIM-PF), filtrando "Indústria geral" (c544/129314)
+    - { table: 8888, variable: 12606, name: producao_industrial, revisable: true, classification: "c544/129314", description: "PIM-PF Indústria geral" }
+
+fred:
+  # Requer chave gratuita em FRED_API_KEY (https://fred.stlouisfed.org/docs/api/api_key.html)
+  # Sem a chave o conector é pulado silenciosamente.
+  base_url: "https://api.stlouisfed.org/fred/series/observations"
+  start_date: "2000-01-01"
+  series:
+    - { id: FEDFUNDS,     name: fed_funds,     unit: "%" }
+    - { id: DGS10,        name: us_10y,        unit: "%" }
+    - { id: DGS2,         name: us_2y,         unit: "%" }
+    - { id: DCOILBRENTEU, name: brent,         unit: "USD/barril" }
+    - { id: PIORECRUSDM,  name: minerio_ferro, unit: "USD/ton" }
+    - { id: PSOYBUSDQ,    name: soja,          unit: "USD/bushel" }
+    - { id: DTWEXBGS,     name: dxy_amplo,     unit: "índice" }
+    - { id: SP500,        name: sp500,         unit: "índice" }
+    - { id: VIXCLS,       name: vix,           unit: "índice" }
+
+b3_corporate_actions:
+  base_url: "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/"
+  throttle_seconds: 0.5
+  # "all" = histórico profundo de proventos para todo emissor que já passou pelo
+  # COTAHIST — a API responde para delistadas por tradingName (verificado: SOUZA
+  # CRUZ, TELEMAR), o que mata o survivorship bias nos proventos em dinheiro.
+  # Eventos societários (desdobramentos) de delistadas seguem sem fonte.
+  deep_dividends: all
+  # Negative cache: emissor delistado sem proventos é re-sondado no máx. a cada N
+  # dias (listadas herdam os 7d do max_age). Corta o grosso das ~4.300 sondagens
+  # vazias por execução do crawl profundo — ver core/storage.py:write_missing.
+  deep_miss_ttl_days: 90
+
+# GOTCHA: o domínio é .gov.br (o .com.br citado em referências antigas não resolve)
+tesouro_direto:
+  ckan_package_url: "https://www.tesourotransparente.gov.br/ckan/api/3/action/package_show?id=taxas-dos-titulos-ofertados-pelo-tesouro-direto"
+  fallback_url: "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv"

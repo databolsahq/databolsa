@@ -1,0 +1,113 @@
+name: Publish packages (npm)
+# Publica @databolsa/sdk·cli·mcp no npm via OIDC Trusted Publishing (sem token, com
+# provenance) e cria a GitHub Release vX.Y.Z (job github-release).
+#
+# Disparo manual (workflow_dispatch) após bumpar a versão dos pacotes (mantenha todas
+# em lockstep) e dar commit. Republicar é a única forma de atualizar o README exibido
+# no npmjs (um patch bump basta).
+# Pré-requisito (one-time): Trusted Publisher configurado no npmjs para cada pacote.
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Which package to publish
+        type: choice
+        options: [all, cli, sdk, mcp]
+        default: all
+
+permissions:
+  contents: read
+  id-token: write        # OIDC → npm trusted publishing (+ provenance)
+
+jobs:
+  # Gate pré-publish: empacota e valida os 3 pacotes num ambiente isolado, rodando flow +
+  # auth SÓ contra a API local (--no-live). Não depende da API pública estar no ar — então
+  # uma instabilidade do data-plane nunca segura um release das libs. Se quebrar, NÃO publica.
+  smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: bun install --frozen-lockfile
+      - run: node scripts/smoke-packages.mjs --no-live
+
+  publish:
+    needs: smoke
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg: [cli, sdk, mcp]
+    steps:
+      - uses: actions/checkout@v5
+      # Every package's `prepack` builds dist with `bun build` (cli/mcp → node, sdk →
+      # browser ESM + d.ts), so bun must be on PATH before `npm publish` runs prepack.
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      # Trusted publishing (OIDC) needs npm >= 11.5.1.
+      - run: npm install -g npm@latest
+      # Workspace deps for the build (sdk's prepack runs tsc for the .d.ts).
+      - run: bun install
+      - name: Publish @databolsa/${{ matrix.pkg }}
+        if: ${{ inputs.package == 'all' || inputs.package == matrix.pkg }}
+        working-directory: packages/${{ matrix.pkg }}
+        run: npm publish --provenance   # prepack builds via bun; OIDC = auth + provenance (repo público)
+
+  # Cria a GitHub Release (aba Releases + badge) automaticamente após publicar `all`.
+  # Idempotente: se a tag da versão já existe, pula. `needs: publish` garante que só
+  # roda se os 3 pacotes publicaram. Versão lida do package.json (os 3 andam juntos).
+  github-release:
+    needs: publish
+    if: ${{ inputs.package == 'all' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write        # criar tag + release
+    steps:
+      - uses: actions/checkout@v5
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./packages/sdk/package.json').version")
+          TAG="v${VERSION}"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG já existe — pulando."
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "$TAG" \
+              --notes "@databolsa/sdk·cli·mcp ${VERSION} — publicados no npm via OIDC trusted publishing (provenance SLSA). Apache-2.0."
+          fi
+
+  # Verificação pós-publish: instala a versão recém-publicada DIRETO do registro npm num
+  # ambiente isolado e repete o smoke. Confirma que o artefato publicado é instalável e
+  # importa/roda + matriz de auth (--no-live: a API pública exige chave, não dependemos
+  # dela). Espera a propagação do npm com algumas tentativas.
+  verify:
+    needs: publish
+    if: ${{ inputs.package == 'all' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - run: bun install --frozen-lockfile
+      - name: Smoke da versão publicada (registro)
+        run: |
+          VERSION=$(node -p "require('./packages/sdk/package.json').version")
+          for attempt in 1 2 3 4 5; do
+            if node scripts/smoke-packages.mjs --source=registry --version="$VERSION" --no-live; then
+              exit 0
+            fi
+            echo "tentativa $attempt falhou (propagação do npm?) — aguardando 30s"
+            sleep 30
+          done
+          echo "smoke da versão publicada falhou após as tentativas" >&2
+          exit 1

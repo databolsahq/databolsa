@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw_fred
+    schema: main
+    tables:
+      - name: fred
+        config:
+          external_location: "read_parquet('../../data/raw/fred/series_id=*/data.parquet', hive_partitioning=false)"

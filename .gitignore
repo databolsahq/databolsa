@@ -1,0 +1,27 @@
+# Data lake local (raw zone) — never commit extracted data
+data/
+
+# Local scratch — screenshots, ad-hoc spreadsheets, throwaway artifacts
+tmp/
+
+# dbt (packages/warehouse)
+target/
+dbt_packages/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+dist/
+
+# Node
+node_modules/
+*.tsbuildinfo
+
+# Local env — .env.example is tracked; everything else is local-only.
+.env
+.env.local
+.env*.local
