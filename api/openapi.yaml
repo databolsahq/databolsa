@@ -1,0 +1,4875 @@
+openapi: 3.1.0
+info:
+  title: DataBolsa API
+  description: >-
+    API aberta de dados do mercado financeiro brasileiro.
+
+
+    Convenções:
+
+    - Datas em ISO 8601; valores monetários em BRL salvo campo `currency`.
+
+    - Preços de ações **ajustados por proventos por default** (`adjusted=true`).
+
+    - Indicadores fundamentalistas **TTM por default**, de demonstrações
+    consolidadas.
+
+    - Paginação por cursor: `?cursor=&limit=`; envelope `{ data, meta: {
+    next_cursor, count } }`.
+
+    - Erros seguem RFC 9457 (`application/problem+json`).
+
+    - Toda métrica é rastreável à fonte primária (campo `lineage`).
+  version: 1.0.4
+  contact:
+    name: DataBolsa
+  license:
+    name: Apache-2.0
+servers:
+  - url: https://api.databolsa.com
+    description: Produção
+  - url: http://localhost:8080
+    description: Self-hosted
+security:
+  - bearerApiKey: []
+components:
+  securitySchemes:
+    bearerApiKey:
+      type: http
+      scheme: bearer
+  schemas:
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+        version:
+          type: string
+        data_freshness:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - status
+        - version
+        - data_freshness
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+      required:
+        - type
+        - title
+        - status
+    Company:
+      type: object
+      properties:
+        cvm_code:
+          type: integer
+        cnpj:
+          type:
+            - string
+            - "null"
+        name:
+          type:
+            - string
+            - "null"
+        trade_name:
+          type:
+            - string
+            - "null"
+          description: Nome de pregão — null nas fontes abertas
+        sector:
+          type:
+            - string
+            - "null"
+        subsector:
+          type:
+            - string
+            - "null"
+        listing_segment:
+          type:
+            - string
+            - "null"
+        tickers:
+          type: array
+          items:
+            type: string
+        shares_outstanding:
+          type: object
+          properties:
+            common:
+              type:
+                - number
+                - "null"
+            preferred:
+              type:
+                - number
+                - "null"
+            total:
+              type:
+                - number
+                - "null"
+          required:
+            - common
+            - preferred
+            - total
+          description: Capital emitido (fontes cruzadas FRE/CVM e B3)
+        free_float_pct:
+          type:
+            - number
+            - "null"
+          description: "% de ações em circulação (FRE)"
+        status:
+          type:
+            - string
+            - "null"
+        has_active_ticker:
+          type:
+            - boolean
+            - "null"
+      required:
+        - cvm_code
+        - cnpj
+        - name
+        - trade_name
+        - sector
+        - subsector
+        - listing_segment
+        - tickers
+        - shares_outstanding
+        - free_float_pct
+        - status
+        - has_active_ticker
+    Document:
+      type: object
+      properties:
+        cvm_code:
+          type: integer
+        category:
+          type:
+            - string
+            - "null"
+        type:
+          type:
+            - string
+            - "null"
+        subject:
+          type:
+            - string
+            - "null"
+        reference_date:
+          type:
+            - string
+            - "null"
+        filed_at:
+          type:
+            - string
+            - "null"
+        protocol:
+          type:
+            - string
+            - "null"
+        download_url:
+          type:
+            - string
+            - "null"
+      required:
+        - cvm_code
+        - category
+        - type
+        - subject
+        - reference_date
+        - filed_at
+        - protocol
+        - download_url
+    LiveQuotesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LiveQuote"
+        as_of:
+          type: string
+          description: Instante da resposta (ISO 8601).
+      required:
+        - data
+        - as_of
+    LiveQuote:
+      type: object
+      properties:
+        ticker:
+          type: string
+        price:
+          type:
+            - number
+            - "null"
+        change_pct:
+          type:
+            - number
+            - "null"
+        ts:
+          type: string
+        session_date:
+          type: string
+        prev_close:
+          type:
+            - number
+            - "null"
+        source:
+          type: string
+          enum:
+            - intraday
+            - eod
+      required:
+        - ticker
+        - price
+        - change_pct
+        - ts
+        - session_date
+        - prev_close
+        - source
+    Stock:
+      type: object
+      properties:
+        ticker:
+          type: string
+        isin:
+          type:
+            - string
+            - "null"
+        type:
+          oneOf:
+            - $ref: "#/components/schemas/StockType"
+            - type: "null"
+        company:
+          type:
+            - object
+            - "null"
+          properties:
+            cvm_code:
+              type:
+                - integer
+                - "null"
+            name:
+              type:
+                - string
+                - "null"
+            tickers:
+              type: array
+              items:
+                type: object
+                properties:
+                  ticker:
+                    type: string
+                  type:
+                    oneOf:
+                      - $ref: "#/components/schemas/StockType"
+                      - type: "null"
+                required:
+                  - ticker
+                  - type
+              description: Papéis (classes) da empresa — cada um analisável em
+                /stocks/{ticker}/indicators
+          required:
+            - cvm_code
+            - name
+            - tickers
+        shares_outstanding:
+          type:
+            - number
+            - "null"
+        latest_quote:
+          type: object
+          properties:
+            date:
+              type: string
+            close:
+              type:
+                - number
+                - "null"
+            adjust_type:
+              type:
+                - string
+                - "null"
+            adjust_quality:
+              type:
+                - string
+                - "null"
+          required:
+            - date
+            - close
+            - adjust_type
+            - adjust_quality
+      required:
+        - ticker
+        - isin
+        - type
+        - company
+        - shares_outstanding
+        - latest_quote
+    StockType:
+      type: string
+      enum:
+        - ON
+        - PN
+        - PNA
+        - PNB
+        - UNIT
+    Quote:
+      type: object
+      properties:
+        date:
+          type: string
+        open:
+          type:
+            - number
+            - "null"
+        high:
+          type:
+            - number
+            - "null"
+        low:
+          type:
+            - number
+            - "null"
+        close:
+          type:
+            - number
+            - "null"
+        close_raw:
+          type:
+            - number
+            - "null"
+          description: Fechamento bruto (não ajustado), como reportado pela B3
+        close_tr:
+          type:
+            - number
+            - "null"
+          description: "Fechamento de retorno total: ajustado por eventos + proventos
+            reinvestidos (bruto). = close quando não há fonte de proventos
+            (units/FII)"
+        volume:
+          type:
+            - number
+            - "null"
+          description: Volume financeiro (R$)
+        quantity:
+          type:
+            - number
+            - "null"
+        trades:
+          type:
+            - number
+            - "null"
+          description: "Nº de negócios — null: fonte aberta dá quantidade, não contagem"
+        adjusted:
+          type: boolean
+        adjust_type:
+          type:
+            - string
+            - "null"
+        adjust_quality:
+          type:
+            - string
+            - "null"
+      required:
+        - date
+        - open
+        - high
+        - low
+        - close
+        - close_raw
+        - close_tr
+        - volume
+        - quantity
+        - trades
+        - adjusted
+        - adjust_type
+        - adjust_quality
+    IntradaySeries:
+      type: object
+      properties:
+        ticker:
+          type: string
+        session_date:
+          type: string
+        prev_close:
+          type:
+            - number
+            - "null"
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/IntradayPoint"
+      required:
+        - ticker
+        - session_date
+        - prev_close
+        - points
+    IntradayPoint:
+      type: object
+      properties:
+        ts:
+          type: string
+        price:
+          type:
+            - number
+            - "null"
+        change_pct:
+          type:
+            - number
+            - "null"
+      required:
+        - ts
+        - price
+        - change_pct
+    IndicatorValue:
+      type: object
+      properties:
+        name:
+          type: string
+        label:
+          type: string
+        value:
+          type:
+            - number
+            - "null"
+          description: null quando não calculável — ver reason
+        unit:
+          type: string
+          enum: &a2
+            - ratio
+            - percent
+            - brl
+            - brl_per_share
+            - count
+            - days
+        reason:
+          type:
+            - string
+            - "null"
+        reference_date:
+          type:
+            - string
+            - "null"
+        ttm:
+          type: boolean
+        lineage:
+          $ref: "#/components/schemas/Lineage"
+        methodology_url:
+          type: string
+      required:
+        - name
+        - label
+        - value
+        - unit
+        - reason
+        - reference_date
+        - ttm
+        - lineage
+        - methodology_url
+    Lineage:
+      type: object
+      properties:
+        source:
+          type: string
+        reference:
+          type: string
+        url:
+          type:
+            - string
+            - "null"
+      required:
+        - source
+        - reference
+    Observation:
+      type: object
+      properties:
+        date:
+          type: string
+        value:
+          type:
+            - number
+            - "null"
+      required:
+        - date
+        - value
+    Dividend:
+      type: object
+      properties:
+        type:
+          type:
+            - string
+            - "null"
+        ex_date:
+          type:
+            - string
+            - "null"
+        payment_date:
+          type:
+            - string
+            - "null"
+        value_per_share_gross:
+          type:
+            - number
+            - "null"
+        value_per_share_net:
+          type:
+            - number
+            - "null"
+      required:
+        - type
+        - ex_date
+        - payment_date
+        - value_per_share_gross
+        - value_per_share_net
+    CorporateEvent:
+      type: object
+      properties:
+        type:
+          type:
+            - string
+            - "null"
+        approved_date:
+          type:
+            - string
+            - "null"
+        ex_date:
+          type:
+            - string
+            - "null"
+        factor:
+          type:
+            - number
+            - "null"
+        detail:
+          type:
+            - string
+            - "null"
+      required:
+        - type
+        - approved_date
+        - ex_date
+        - factor
+        - detail
+    InsiderMove:
+      type: object
+      properties:
+        reference_month:
+          type: string
+          description: AAAA-MM
+        net_shares:
+          type:
+            - number
+            - "null"
+        net_value_brl:
+          type:
+            - number
+            - "null"
+        buy_value_brl:
+          type:
+            - number
+            - "null"
+        sell_value_brl:
+          type:
+            - number
+            - "null"
+        lineage:
+          $ref: "#/components/schemas/Lineage"
+      required:
+        - reference_month
+        - net_shares
+        - net_value_brl
+        - buy_value_brl
+        - sell_value_brl
+        - lineage
+    FundHolding:
+      type: object
+      properties:
+        cnpj:
+          type: string
+        comptc_date:
+          type: string
+        cd_ativo:
+          type:
+            - string
+            - "null"
+        ticker:
+          type:
+            - string
+            - "null"
+          description: cd_ativo resolvido ao nosso universo (ação/BDR); null caso contrário
+        tp_aplic:
+          type:
+            - string
+            - "null"
+        ds_ativo:
+          type:
+            - string
+            - "null"
+        cd_isin:
+          type:
+            - string
+            - "null"
+        qty:
+          type:
+            - number
+            - "null"
+        market_value:
+          type:
+            - number
+            - "null"
+          description: posição a mercado (R$)
+        fund_name:
+          type:
+            - string
+            - "null"
+        fund_manager:
+          type:
+            - string
+            - "null"
+        fund_classificacao:
+          type:
+            - string
+            - "null"
+      required:
+        - cnpj
+        - comptc_date
+        - cd_ativo
+        - ticker
+        - tp_aplic
+        - ds_ativo
+        - cd_isin
+        - qty
+        - market_value
+        - fund_name
+        - fund_manager
+        - fund_classificacao
+    FundOwnershipSummary:
+      type: object
+      properties:
+        comptc_date:
+          type: string
+          description: competência do CDA (AAAA-MM-DD)
+        n_funds:
+          type:
+            - number
+            - "null"
+        total_value_brl:
+          type:
+            - number
+            - "null"
+          description: posição a mercado somada (R$)
+        total_shares:
+          type:
+            - number
+            - "null"
+      required:
+        - comptc_date
+        - n_funds
+        - total_value_brl
+        - total_shares
+    TradeStat:
+      type: object
+      properties:
+        ticker:
+          type: string
+        trade_date:
+          type: string
+        segment:
+          type:
+            - string
+            - "null"
+        vwap:
+          type:
+            - number
+            - "null"
+          description: preço médio de negociação (VWAP oficial B3)
+        min_price:
+          type:
+            - number
+            - "null"
+        max_price:
+          type:
+            - number
+            - "null"
+        last_price:
+          type:
+            - number
+            - "null"
+        n_trades:
+          type:
+            - number
+            - "null"
+          description: nº de negócios no pregão
+        quantity:
+          type:
+            - number
+            - "null"
+        financial_volume:
+          type:
+            - number
+            - "null"
+          description: volume financeiro (R$)
+        lineage:
+          type:
+            - string
+            - "null"
+      required:
+        - ticker
+        - trade_date
+        - segment
+        - vwap
+        - min_price
+        - max_price
+        - last_price
+        - n_trades
+        - quantity
+        - financial_volume
+        - lineage
+    ScreenerRow:
+      type: object
+      properties:
+        ticker:
+          type: string
+        name:
+          type:
+            - string
+            - "null"
+        sector:
+          type:
+            - string
+            - "null"
+        indicators:
+          type: object
+          properties:
+            market_cap:
+              type:
+                - number
+                - "null"
+            pl:
+              type:
+                - number
+                - "null"
+            pvp:
+              type:
+                - number
+                - "null"
+            dy:
+              type:
+                - number
+                - "null"
+            roe:
+              type:
+                - number
+                - "null"
+            roic:
+              type:
+                - number
+                - "null"
+            ev_ebitda:
+              type:
+                - number
+                - "null"
+            div_liq_ebitda:
+              type:
+                - number
+                - "null"
+            margem_liquida:
+              type:
+                - number
+                - "null"
+          required:
+            - market_cap
+            - pl
+            - pvp
+            - dy
+            - roe
+            - roic
+            - ev_ebitda
+            - div_liq_ebitda
+            - margem_liquida
+      required:
+        - ticker
+        - name
+        - sector
+        - indicators
+    FiiListRow:
+      type: object
+      properties:
+        ticker:
+          type: string
+        name:
+          type:
+            - string
+            - "null"
+        segment:
+          type:
+            - string
+            - "null"
+        is_paper:
+          type: boolean
+        reference_date:
+          type:
+            - string
+            - "null"
+        preco:
+          type:
+            - number
+            - "null"
+        dy_12m:
+          type:
+            - number
+            - "null"
+        pvp:
+          type:
+            - number
+            - "null"
+        vacancia_fisica:
+          type:
+            - number
+            - "null"
+        patrimonio_liquido:
+          type:
+            - number
+            - "null"
+      required:
+        - ticker
+        - name
+        - segment
+        - is_paper
+        - reference_date
+        - preco
+        - dy_12m
+        - pvp
+        - vacancia_fisica
+        - patrimonio_liquido
+    FundScreenerItem:
+      type: object
+      properties:
+        cnpj:
+          type: string
+        name:
+          type:
+            - string
+            - "null"
+        tipo_classe:
+          type:
+            - string
+            - "null"
+        classificacao:
+          type:
+            - string
+            - "null"
+        classificacao_anbima:
+          type:
+            - string
+            - "null"
+        manager:
+          type:
+            - string
+            - "null"
+        admin_fee_pct:
+          type:
+            - number
+            - "null"
+        situacao:
+          type:
+            - string
+            - "null"
+        last_date:
+          type:
+            - string
+            - "null"
+        last_quota:
+          type:
+            - number
+            - "null"
+        net_worth:
+          type:
+            - number
+            - "null"
+        shareholders:
+          type:
+            - number
+            - "null"
+        return_1m:
+          type:
+            - number
+            - "null"
+        return_12m:
+          type:
+            - number
+            - "null"
+          description: null enquanto não houver 12m de histórico ingerido
+        return_ytd:
+          type:
+            - number
+            - "null"
+        net_flow_accumulated:
+          type:
+            - number
+            - "null"
+      required:
+        - cnpj
+        - name
+        - tipo_classe
+        - classificacao
+        - classificacao_anbima
+        - manager
+        - admin_fee_pct
+        - situacao
+        - last_date
+        - last_quota
+        - net_worth
+        - shareholders
+        - return_1m
+        - return_12m
+        - return_ytd
+        - net_flow_accumulated
+    RegimeSignal:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type:
+            - number
+            - "null"
+        direction:
+          type:
+            - string
+            - "null"
+          enum:
+            - up
+            - down
+            - flat
+            - null
+        lineage:
+          $ref: "#/components/schemas/Lineage"
+        unit:
+          type:
+            - string
+            - "null"
+        label:
+          type:
+            - string
+            - "null"
+        date:
+          type:
+            - string
+            - "null"
+      required:
+        - name
+        - value
+        - direction
+        - lineage
+    RegimeSnapshot:
+      type: object
+      properties:
+        as_of:
+          type:
+            - string
+            - "null"
+        quadrant:
+          type:
+            - string
+            - "null"
+          enum:
+            - growth_up_inflation_up
+            - growth_up_inflation_down
+            - growth_down_inflation_up
+            - growth_down_inflation_down
+            - null
+        growth:
+          type: object
+          properties:
+            direction:
+              type:
+                - string
+                - "null"
+              enum:
+                - up
+                - down
+                - flat
+                - null
+            signals:
+              type: array
+              items:
+                $ref: "#/components/schemas/RegimeSignal"
+          required:
+            - direction
+            - signals
+        inflation:
+          type: object
+          properties:
+            direction:
+              type:
+                - string
+                - "null"
+              enum:
+                - up
+                - down
+                - flat
+                - null
+            signals:
+              type: array
+              items:
+                $ref: "#/components/schemas/RegimeSignal"
+          required:
+            - direction
+            - signals
+        cross_asset:
+          type: object
+          properties:
+            dy_vs_selic_spread:
+              type:
+                - number
+                - "null"
+            equity_risk_premium:
+              type:
+                - number
+                - "null"
+            real_selic:
+              type:
+                - number
+                - "null"
+          required:
+            - dy_vs_selic_spread
+            - equity_risk_premium
+            - real_selic
+      required:
+        - as_of
+        - quadrant
+        - growth
+        - inflation
+        - cross_asset
+    Expectation:
+      type: object
+      properties:
+        survey_date:
+          type: string
+        reference:
+          type: string
+        median:
+          type:
+            - number
+            - "null"
+        mean:
+          type:
+            - number
+            - "null"
+        std_dev:
+          type:
+            - number
+            - "null"
+        respondents:
+          type:
+            - number
+            - "null"
+        base:
+          type:
+            - number
+            - "null"
+      required:
+        - survey_date
+        - reference
+        - median
+        - mean
+        - std_dev
+        - respondents
+        - base
+    TesouroBondQuote:
+      type: object
+      properties:
+        type:
+          type:
+            - string
+            - "null"
+        name:
+          type:
+            - string
+            - "null"
+        maturity:
+          type:
+            - string
+            - "null"
+        date:
+          type:
+            - string
+            - "null"
+        buy_rate:
+          type:
+            - number
+            - "null"
+        sell_rate:
+          type:
+            - number
+            - "null"
+        buy_price:
+          type:
+            - number
+            - "null"
+        sell_price:
+          type:
+            - number
+            - "null"
+      required:
+        - type
+        - name
+        - maturity
+        - date
+        - buy_rate
+        - sell_rate
+        - buy_price
+        - sell_price
+    IndexMeta:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        rebalancing:
+          type: string
+      required:
+        - code
+        - name
+        - rebalancing
+    IndexComposition:
+      type: object
+      properties:
+        code:
+          type: string
+        effective_date:
+          type: string
+        components:
+          type: array
+          items:
+            type: object
+            properties:
+              ticker:
+                type: string
+              weight:
+                type: number
+              theoretical_quantity:
+                type: number
+            required:
+              - ticker
+              - weight
+              - theoretical_quantity
+      required:
+        - code
+        - effective_date
+        - components
+    SeriesMeta:
+      type: object
+      properties:
+        source:
+          type: string
+        series_id:
+          type: string
+        name:
+          type:
+            - string
+            - "null"
+        label:
+          type:
+            - string
+            - "null"
+        unit:
+          type:
+            - string
+            - "null"
+        frequency:
+          type:
+            - string
+            - "null"
+        first_date:
+          type:
+            - string
+            - "null"
+        last_date:
+          type:
+            - string
+            - "null"
+      required:
+        - source
+        - series_id
+        - name
+        - label
+        - unit
+        - frequency
+        - first_date
+        - last_date
+    Fii:
+      type: object
+      properties:
+        ticker:
+          type: string
+        cnpj:
+          type:
+            - string
+            - "null"
+        name:
+          type:
+            - string
+            - "null"
+        segment:
+          type:
+            - string
+            - "null"
+        administrator:
+          type:
+            - string
+            - "null"
+        manager:
+          type:
+            - string
+            - "null"
+        is_paper:
+          type: boolean
+      required:
+        - ticker
+        - cnpj
+        - name
+        - segment
+        - administrator
+        - manager
+        - is_paper
+    FiiDistribution:
+      type: object
+      properties:
+        ex_date:
+          type:
+            - string
+            - "null"
+        payment_date:
+          type:
+            - string
+            - "null"
+        value_per_share:
+          type:
+            - number
+            - "null"
+        tax_free:
+          type: boolean
+      required:
+        - ex_date
+        - payment_date
+        - value_per_share
+        - tax_free
+    FiiMonthlyReport:
+      type: object
+      properties:
+        reference_month:
+          type:
+            - string
+            - "null"
+        net_asset_value:
+          type:
+            - number
+            - "null"
+        value_per_share:
+          type:
+            - number
+            - "null"
+        monthly_dividend_yield_pct:
+          type:
+            - number
+            - "null"
+        shareholders:
+          type:
+            - number
+            - "null"
+        shares_issued:
+          type:
+            - number
+            - "null"
+      required:
+        - reference_month
+        - net_asset_value
+        - value_per_share
+        - monthly_dividend_yield_pct
+        - shareholders
+        - shares_issued
+    BdrProfile:
+      type: object
+      properties:
+        ticker:
+          type: string
+        name:
+          type:
+            - string
+            - "null"
+        isin:
+          type:
+            - string
+            - "null"
+        kind:
+          type:
+            - string
+            - "null"
+          description: patrocinado | nao_patrocinado
+        spec:
+          type:
+            - string
+            - "null"
+        first_traded:
+          type:
+            - string
+            - "null"
+        last_traded:
+          type:
+            - string
+            - "null"
+        sessions:
+          type:
+            - number
+            - "null"
+      required:
+        - ticker
+        - name
+        - isin
+        - kind
+        - spec
+        - first_traded
+        - last_traded
+        - sessions
+    BdrQuote:
+      type: object
+      properties:
+        date:
+          type: string
+        open:
+          type:
+            - number
+            - "null"
+        high:
+          type:
+            - number
+            - "null"
+        low:
+          type:
+            - number
+            - "null"
+        close:
+          type:
+            - number
+            - "null"
+        close_raw:
+          type:
+            - number
+            - "null"
+        volume:
+          type:
+            - number
+            - "null"
+        adjust_quality:
+          type:
+            - string
+            - "null"
+      required:
+        - date
+        - open
+        - high
+        - low
+        - close
+        - close_raw
+        - volume
+        - adjust_quality
+    EtfProfile:
+      type: object
+      properties:
+        ticker:
+          type: string
+        name:
+          type:
+            - string
+            - "null"
+        cnpj:
+          type:
+            - string
+            - "null"
+        manager:
+          type:
+            - string
+            - "null"
+          description: gestor (positionManager)
+        administrator:
+          type:
+            - string
+            - "null"
+        segment:
+          type:
+            - string
+            - "null"
+        classification:
+          type:
+            - string
+            - "null"
+        trading_code_others:
+          type:
+            - string
+            - "null"
+          description: lote fracionário / código alternativo
+        quota_count_authorized:
+          type:
+            - number
+            - "null"
+          description: teto autorizado de cotas (cadastro B3)
+        first_traded:
+          type:
+            - string
+            - "null"
+        last_traded:
+          type:
+            - string
+            - "null"
+        sessions:
+          type:
+            - number
+            - "null"
+      required:
+        - ticker
+        - name
+        - cnpj
+        - manager
+        - administrator
+        - segment
+        - classification
+        - trading_code_others
+        - quota_count_authorized
+        - first_traded
+        - last_traded
+        - sessions
+    FundProfile:
+      type: object
+      properties:
+        cnpj:
+          type: string
+        codigo_cvm:
+          type:
+            - number
+            - "null"
+        name:
+          type:
+            - string
+            - "null"
+        tipo_classe:
+          type:
+            - string
+            - "null"
+        situacao:
+          type:
+            - string
+            - "null"
+        classificacao:
+          type:
+            - string
+            - "null"
+        classificacao_anbima:
+          type:
+            - string
+            - "null"
+        entidade_investimento:
+          type:
+            - string
+            - "null"
+        net_worth:
+          type:
+            - number
+            - "null"
+          description: patrimônio líquido (R$)
+        cnpj_fundo:
+          type:
+            - string
+            - "null"
+        tipo_fundo:
+          type:
+            - string
+            - "null"
+        administrator:
+          type:
+            - string
+            - "null"
+        manager:
+          type:
+            - string
+            - "null"
+          description: gestor
+        admin_fee_pct:
+          type:
+            - number
+            - "null"
+          description: taxa de administração (herdada do cadastro legado)
+        performance_fee_pct:
+          type:
+            - number
+            - "null"
+        data_registro:
+          type:
+            - string
+            - "null"
+      required:
+        - cnpj
+        - codigo_cvm
+        - name
+        - tipo_classe
+        - situacao
+        - classificacao
+        - classificacao_anbima
+        - entidade_investimento
+        - net_worth
+        - cnpj_fundo
+        - tipo_fundo
+        - administrator
+        - manager
+        - admin_fee_pct
+        - performance_fee_pct
+        - data_registro
+    FundQuote:
+      type: object
+      properties:
+        comptc_date:
+          type: string
+        quota_value:
+          type:
+            - number
+            - "null"
+        net_worth:
+          type:
+            - number
+            - "null"
+        total_value:
+          type:
+            - number
+            - "null"
+        inflow:
+          type:
+            - number
+            - "null"
+        outflow:
+          type:
+            - number
+            - "null"
+        net_flow:
+          type:
+            - number
+            - "null"
+        shareholders:
+          type:
+            - number
+            - "null"
+      required:
+        - comptc_date
+        - quota_value
+        - net_worth
+        - total_value
+        - inflow
+        - outflow
+        - net_flow
+        - shareholders
+    InvestorFlow:
+      type: object
+      properties:
+        as_of_date:
+          type: string
+        investor_type:
+          type: string
+          description: Estrangeiro | Institucionais | ...
+        buy_brl_thousand:
+          type:
+            - number
+            - "null"
+        sell_brl_thousand:
+          type:
+            - number
+            - "null"
+        buy_share_pct:
+          type:
+            - number
+            - "null"
+        sell_share_pct:
+          type:
+            - number
+            - "null"
+        net_mtd_brl_thousand:
+          type:
+            - number
+            - "null"
+        net_daily_brl_thousand:
+          type:
+            - number
+            - "null"
+        lineage:
+          type:
+            - string
+            - "null"
+      required:
+        - as_of_date
+        - investor_type
+        - buy_brl_thousand
+        - sell_brl_thousand
+        - buy_share_pct
+        - sell_share_pct
+        - net_mtd_brl_thousand
+        - net_daily_brl_thousand
+        - lineage
+    InvestorFlowMonthly:
+      type: object
+      properties:
+        month_ref:
+          type: string
+        investor_type:
+          type: string
+        segment:
+          type: string
+        brl_reais:
+          type:
+            - number
+            - "null"
+        share_pct:
+          type:
+            - number
+            - "null"
+        lineage:
+          type:
+            - string
+            - "null"
+      required:
+        - month_ref
+        - investor_type
+        - segment
+        - brl_reais
+        - share_pct
+        - lineage
+    PublicOffering:
+      type: object
+      properties:
+        offering_id:
+          type: string
+        regime:
+          type:
+            - string
+            - "null"
+          description: ICVM_400_476 | RCVM_160
+        numero_processo:
+          type:
+            - string
+            - "null"
+        numero_requerimento:
+          type:
+            - string
+            - "null"
+        cnpj_emissor:
+          type:
+            - string
+            - "null"
+        nome_emissor:
+          type:
+            - string
+            - "null"
+        nome_lider:
+          type:
+            - string
+            - "null"
+        tipo_ativo:
+          type:
+            - string
+            - "null"
+        tipo_oferta:
+          type:
+            - string
+            - "null"
+        rito:
+          type:
+            - string
+            - "null"
+        status:
+          type:
+            - string
+            - "null"
+        data_processo:
+          type:
+            - string
+            - "null"
+        data_registro:
+          type:
+            - string
+            - "null"
+        data_encerramento:
+          type:
+            - string
+            - "null"
+        valor_total:
+          type:
+            - number
+            - "null"
+        incentivo_fiscal:
+          type:
+            - boolean
+            - "null"
+      required:
+        - offering_id
+        - regime
+        - numero_processo
+        - numero_requerimento
+        - cnpj_emissor
+        - nome_emissor
+        - nome_lider
+        - tipo_ativo
+        - tipo_oferta
+        - rito
+        - status
+        - data_processo
+        - data_registro
+        - data_encerramento
+        - valor_total
+        - incentivo_fiscal
+    OptionsChain:
+      type: object
+      properties:
+        underlying_ticker:
+          type: string
+        date:
+          type:
+            - string
+            - "null"
+        count:
+          type: number
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptionContract"
+      required:
+        - underlying_ticker
+        - date
+        - count
+        - options
+    OptionContract:
+      type: object
+      properties:
+        option_ticker:
+          type: string
+        underlying_ticker:
+          type:
+            - string
+            - "null"
+        underlying_root:
+          type:
+            - string
+            - "null"
+        option_type:
+          type:
+            - string
+            - "null"
+          description: call | put
+        strike:
+          type:
+            - number
+            - "null"
+        expiry:
+          type:
+            - string
+            - "null"
+        date:
+          type:
+            - string
+            - "null"
+        last:
+          type:
+            - number
+            - "null"
+        volume_brl:
+          type:
+            - number
+            - "null"
+        trades:
+          type:
+            - number
+            - "null"
+        underlying_spot:
+          type:
+            - number
+            - "null"
+        days_to_expiry:
+          type:
+            - number
+            - "null"
+        moneyness:
+          type:
+            - number
+            - "null"
+          description: spot / strike
+        intrinsic:
+          type:
+            - number
+            - "null"
+        time_value:
+          type:
+            - number
+            - "null"
+        iv:
+          type:
+            - number
+            - "null"
+          description: vol implícita anualizada (Black-Scholes europeu)
+        delta:
+          type:
+            - number
+            - "null"
+        gamma:
+          type:
+            - number
+            - "null"
+        vega:
+          type:
+            - number
+            - "null"
+          description: por 1% de vol
+        theta:
+          type:
+            - number
+            - "null"
+          description: por dia corrido
+        iv_amer:
+          type:
+            - number
+            - "null"
+          description: IV americana (binomial CRR) — corrige exercício antecipado;
+            relevante em puts
+        delta_amer:
+          type:
+            - number
+            - "null"
+        gamma_amer:
+          type:
+            - number
+            - "null"
+        vega_amer:
+          type:
+            - number
+            - "null"
+          description: por 1% de vol
+        theta_amer:
+          type:
+            - number
+            - "null"
+          description: por dia corrido
+        early_ex_premium:
+          type:
+            - number
+            - "null"
+          description: "prêmio de exercício antecipado: preço americano − europeu (mesmo σ)"
+      required:
+        - option_ticker
+        - underlying_ticker
+        - underlying_root
+        - option_type
+        - strike
+        - expiry
+        - date
+        - last
+        - volume_brl
+        - trades
+        - underlying_spot
+        - days_to_expiry
+        - moneyness
+        - intrinsic
+        - time_value
+        - iv
+        - delta
+        - gamma
+        - vega
+        - theta
+        - iv_amer
+        - delta_amer
+        - gamma_amer
+        - vega_amer
+        - theta_amer
+        - early_ex_premium
+    OptionExpiries:
+      type: object
+      properties:
+        underlying_ticker:
+          type: string
+        expiries:
+          type: array
+          items:
+            type: object
+            properties:
+              expiry:
+                type: string
+              count:
+                type: number
+            required:
+              - expiry
+              - count
+      required:
+        - underlying_ticker
+        - expiries
+    OptionQuote:
+      type: object
+      properties:
+        date:
+          type: string
+        option_ticker:
+          type: string
+        option_type:
+          type:
+            - string
+            - "null"
+        strike:
+          type:
+            - number
+            - "null"
+        expiry:
+          type:
+            - string
+            - "null"
+        open:
+          type:
+            - number
+            - "null"
+        high:
+          type:
+            - number
+            - "null"
+        low:
+          type:
+            - number
+            - "null"
+        last:
+          type:
+            - number
+            - "null"
+        volume_brl:
+          type:
+            - number
+            - "null"
+        trades:
+          type:
+            - number
+            - "null"
+        underlying_spot:
+          type:
+            - number
+            - "null"
+        moneyness:
+          type:
+            - number
+            - "null"
+        intrinsic:
+          type:
+            - number
+            - "null"
+        time_value:
+          type:
+            - number
+            - "null"
+        iv:
+          type:
+            - number
+            - "null"
+        delta:
+          type:
+            - number
+            - "null"
+        gamma:
+          type:
+            - number
+            - "null"
+        vega:
+          type:
+            - number
+            - "null"
+        theta:
+          type:
+            - number
+            - "null"
+      required:
+        - date
+        - option_ticker
+        - option_type
+        - strike
+        - expiry
+        - open
+        - high
+        - low
+        - last
+        - volume_brl
+        - trades
+        - underlying_spot
+        - moneyness
+        - intrinsic
+        - time_value
+        - iv
+        - delta
+        - gamma
+        - vega
+        - theta
+    CryptoCandle:
+      type: object
+      properties:
+        open_time:
+          type: string
+        close_time:
+          type: string
+        open:
+          type:
+            - number
+            - "null"
+        high:
+          type:
+            - number
+            - "null"
+        low:
+          type:
+            - number
+            - "null"
+        close:
+          type:
+            - number
+            - "null"
+        volume:
+          type:
+            - number
+            - "null"
+          description: Volume na moeda base
+        quote_volume:
+          type:
+            - number
+            - "null"
+          description: Volume em BRL
+        trades:
+          type:
+            - number
+            - "null"
+      required:
+        - open_time
+        - close_time
+        - open
+        - high
+        - low
+        - close
+        - volume
+        - quote_volume
+        - trades
+    SearchResult:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+            - stock
+            - fii
+            - index
+            - bond
+            - macro
+        ticker:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type:
+            - string
+            - "null"
+        href:
+          type: string
+        score:
+          type: number
+      required:
+        - kind
+        - ticker
+        - title
+        - subtitle
+        - href
+        - score
+    IngestRunSummary:
+      type: object
+      properties:
+        run_id:
+          type: string
+        trigger:
+          type: string
+        started_at:
+          type: string
+        finished_at:
+          type: string
+        duration_s:
+          type: number
+        exit:
+          type: number
+        ok:
+          type: boolean
+        error_count:
+          type: number
+      required:
+        - run_id
+        - trigger
+        - started_at
+        - finished_at
+        - duration_s
+        - exit
+        - ok
+        - error_count
+    IngestSourceHealth:
+      type: object
+      properties:
+        source:
+          type: string
+        status:
+          type: string
+          enum:
+            - ok
+            - stale
+            - error
+            - no_data
+        last_fetch:
+          type:
+            - string
+            - "null"
+        age_days:
+          type:
+            - number
+            - "null"
+        datasets:
+          type: number
+        missing:
+          type: number
+        failed_validation:
+          type: number
+        ok:
+          type: number
+        skip:
+          type: number
+        miss:
+          type: number
+        err:
+          type: number
+        rows:
+          type: number
+        duration_s:
+          type:
+            - number
+            - "null"
+      required:
+        - source
+        - status
+        - last_fetch
+        - age_days
+        - datasets
+        - missing
+        - failed_validation
+        - ok
+        - skip
+        - miss
+        - err
+        - rows
+        - duration_s
+tags:
+  - name: Companies
+    description: Companhias abertas (cadastro CVM) e demonstrações
+  - name: Stocks
+    description: Ações — cotações, indicadores, proventos e eventos
+  - name: Quotes
+    description: Cotações ao vivo (delay de 15 min) — lote e séries intradiárias
+  - name: FIIs
+    description: Fundos imobiliários — indicadores e distribuições
+  - name: Bonds
+    description: Títulos públicos (Tesouro Direto) e curvas de juros
+  - name: Crypto
+    description: Criptoativos em BRL
+  - name: Indices
+    description: Índices da B3 (IBOV, IFIX, ...) e composições
+  - name: Market
+    description: Microestrutura de mercado — fluxo por perfil de investidor
+  - name: Primary Market
+    description: Mercado primário — ofertas públicas de distribuição (CVM)
+  - name: BDR
+    description: BDRs (recibos de ações estrangeiras) — catálogo e cotações
+  - name: ETFs
+    description: ETFs listados na B3 — catálogo (gestor, CNPJ, segmento)
+  - name: Funds
+    description: Fundos de investimento (CVM 175) — perfil, cota diária e screener
+  - name: Options
+    description: Opções sobre ações — cadeia vigente e histórico EOD
+  - name: Macro
+    description: Séries macroeconômicas, expectativas Focus e regime
+  - name: Screener
+    description: Filtros multi-critério sobre ações e FIIs
+  - name: System
+    description: Saúde e metadados da API
+paths:
+  /v1/health:
+    get:
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        default: &a1
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getHealth
+      tags:
+        - System
+      parameters: []
+      summary: Status da API e frescor dos dados
+      security: []
+  /v1/companies:
+    get:
+      responses:
+        "200":
+          description: Página de companhias
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Company"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listCompanies
+      tags:
+        - Companies
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: sector
+          schema:
+            type: string
+            description: Setor (match exato, case-sensitive). Valor desconhecido → página
+              vazia.
+        - in: query
+          name: segment
+          schema:
+            type: string
+            description: "Segmento de listagem B3 (substring, case-insensitive), ex.: 'Novo
+              Mercado'."
+        - in: query
+          name: search
+          schema:
+            type: string
+            description: Busca por nome ou ticker da companhia.
+      summary: Lista companhias abertas (cadastro CVM)
+  /v1/companies/{cvm_code}:
+    get:
+      responses:
+        "200":
+          description: Companhia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+        default: *a1
+      operationId: getCompany
+      tags:
+        - Companies
+      parameters:
+        - in: path
+          name: cvm_code
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            description: Código CVM NUMÉRICO da companhia (não o ticker). Descubra via
+              /search ou listCompanies.
+          required: true
+      summary: Companhia por código CVM
+  /v1/companies/{cvm_code}/documents:
+    get:
+      responses:
+        "200":
+          description: Página de documentos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Document"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listCompanyDocuments
+      tags:
+        - Companies
+      parameters:
+        - in: path
+          name: cvm_code
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            description: Código CVM NUMÉRICO da companhia (não o ticker). Descubra via
+              /search ou listCompanies.
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: category
+          schema:
+            type: string
+            description: "Categoria do documento no IPE/CVM, ex.: 'Fato Relevante',
+              'Comunicado ao Mercado', 'Aviso aos Acionistas', 'Assembleia',
+              'Dados Econômico-Financeiros'."
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Documentos e comunicados (IPE/CVM)
+      description: Fatos relevantes, comunicados e documentos protocolados na CVM
+        (IPE) da companhia (por código CVM). Filtre por `category` e por período
+        (`from`/`to`); paginação por cursor.
+  /v1/quotes/live:
+    get:
+      responses:
+        "200":
+          description: Lote de cotações ao vivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveQuotesResponse"
+        default: *a1
+      operationId: getLiveQuotes
+      tags:
+        - Quotes
+      parameters:
+        - in: query
+          name: tickers
+          schema:
+            type: string
+            description: Tickers separados por vírgula (máx 200). Exclusivo com 'index'.
+        - in: query
+          name: index
+          schema:
+            type: string
+            description: "Código de índice (ex.: IBOV) — resolve os constituintes. Exclusivo
+              com 'tickers'."
+      summary: Cotações ao vivo (delay de 15 min) em lote
+      description: Último preço de vários papéis de uma vez, com delay de 15 min
+        durante o pregão. Informe `tickers` (CSV, máx 200) OU `index` (código,
+        resolve os constituintes). Durante o pregão o preço vem do intradiário
+        (`source=intraday`); fora dele, do fechamento oficial (`source=eod`).
+        Tickers desconhecidos são omitidos.
+  /v1/stocks/{ticker}:
+    get:
+      responses:
+        "200":
+          description: Ação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stock"
+        default: *a1
+      operationId: getStock
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+      summary: Perfil e última cotação do papel
+  /v1/stocks/{ticker}/quotes:
+    get:
+      responses:
+        "200":
+          description: Página de cotações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Quote"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listQuotes
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: adjusted
+          schema:
+            type: string
+      summary: Série de cotações OHLCV
+      description: Ajustada por eventos por default; `from`/`to` filtram o período
+        (from <= to).
+  /v1/stocks/{ticker}/intraday:
+    get:
+      responses:
+        "200":
+          description: Série intradiária
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntradaySeries"
+        default: *a1
+      operationId: getStockIntraday
+      tags:
+        - Quotes
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: session
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: Sessão (AAAA-MM-DD); default = sessão intradiária mais recente.
+      summary: Série intradiária da sessão (delay de 15 min)
+      description: Barras de minuto do pregão; `session` filtra o pregão (default =
+        mais recente).
+  /v1/stocks/{ticker}/indicators:
+    get:
+      responses:
+        "200":
+          description: Indicadores do papel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticker:
+                    type: string
+                  reference_date:
+                    type: string
+                  is_financial:
+                    type: boolean
+                  indicators:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IndicatorValue"
+                required:
+                  - ticker
+                  - reference_date
+                  - is_financial
+                  - indicators
+        default: *a1
+      operationId: getStockIndicators
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: names
+          schema:
+            type: string
+            description: "Lista separada por vírgula de indicadores a retornar (omitir =
+              todos). Ex.: 'pl,roe,dy'. Nomes válidos (abreviações SEM
+              underscore — use 'pl', não 'p_l'): pl, pvp, psr, ev_ebitda,
+              ev_ebit, lpa, vpa, roe, roa, roic, margem_bruta, margem_ebit,
+              margem_liquida, div_liq_ebitda, div_liq_pl, dy, payout,
+              market_cap, price; e dinâmicos: free_float, beta, volatilidade,
+              retorno_12m, volume_medio_2m."
+        - in: query
+          name: at
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Indicadores fundamentalistas (snapshot TTM)
+  /v1/stocks/{ticker}/indicators/history:
+    get:
+      responses:
+        "200":
+          description: Série do indicador
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticker:
+                    type: string
+                  name:
+                    type: string
+                  label:
+                    type: string
+                  unit:
+                    type: string
+                    enum: *a2
+                  observations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Observation"
+                required:
+                  - ticker
+                  - name
+                  - label
+                  - unit
+                  - observations
+        default: *a1
+      operationId: getStockIndicatorHistory
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: name
+          schema:
+            type: string
+            minLength: 1
+            description: "Indicador único para a série histórica (ex.: 'pl', 'roe', 'dy').
+              Mesmos nomes do snapshot."
+          required: true
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+          required: false
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+          required: false
+      summary: Histórico de um indicador (trimestral)
+  /v1/stocks/{ticker}/dividends:
+    get:
+      responses:
+        "200":
+          description: Página de proventos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Dividend"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listDividends
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Proventos (dividendos e JCP)
+  /v1/stocks/{ticker}/events:
+    get:
+      responses:
+        "200":
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CorporateEvent"
+        default: *a1
+      operationId: listCorporateEvents
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Eventos societários (desdobramentos, grupamentos, bonificações)
+  /v1/stocks/{ticker}/insider:
+    get:
+      responses:
+        "200":
+          description: Saldo mensal de insiders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticker:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InsiderMove"
+                required:
+                  - ticker
+                  - data
+        default: *a1
+      operationId: listInsiderMoves
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Movimentações de insiders (CVM VLMO, por mês)
+  /v1/stocks/{ticker}/fund-holders:
+    get:
+      responses:
+        "200":
+          description: Página de fundos detentores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FundHolding"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                  summary:
+                    oneOf:
+                      - $ref: "#/components/schemas/FundOwnershipSummary"
+                      - type: "null"
+                required:
+                  - data
+                  - meta
+                  - summary
+        default: *a1
+      operationId: listFundHolders
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: date
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: Competência do CDA (AAAA-MM-DD); default = mais recente.
+      summary: Fundos de investimento que detêm o ativo (visão reversa do CDA)
+      description: Quais fundos têm o ativo em carteira e quanto (R$), da competência
+        mais recente do CDA (CVM). Ordenado por posição a mercado. Use `date` p/
+        outra competência.
+  /v1/stocks/{ticker}/trade-stats:
+    get:
+      responses:
+        "200":
+          description: Página de estatísticas de negociação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TradeStat"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listTradeStats
+      tags:
+        - Stocks
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: VWAP oficial e nº de negócios por pregão (B3 consolidado)
+      description: Série diária de VWAP oficial (TradAvrgPric), nº de negócios e
+        volume financeiro do instrumento, do arquivo consolidado da B3.
+        Complementa o OHLC ajustado de /quotes.
+  /v1/screener/stocks:
+    get:
+      responses:
+        "200":
+          description: Página de resultados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScreenerRow"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: screenStocks
+      tags:
+        - Screener
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: pl_min
+          schema:
+            type: number
+        - in: query
+          name: pl_max
+          schema:
+            type: number
+        - in: query
+          name: pvp_min
+          schema:
+            type: number
+        - in: query
+          name: pvp_max
+          schema:
+            type: number
+        - in: query
+          name: dy_min
+          schema:
+            type: number
+        - in: query
+          name: roe_min
+          schema:
+            type: number
+        - in: query
+          name: ev_ebitda_max
+          schema:
+            type: number
+        - in: query
+          name: div_liq_ebitda_max
+          schema:
+            type: number
+        - in: query
+          name: sector
+          schema:
+            type: string
+            description: Filtra por setor da empresa (match EXATO, case-sensitive). Valor
+              desconhecido retorna página vazia, sem erro.
+        - in: query
+          name: segment
+          schema:
+            type: string
+            description: "Filtra por segmento de listagem B3 (substring, case-insensitive),
+              ex.: 'Novo Mercado'."
+        - in: query
+          name: sort
+          schema:
+            type: string
+            description: "Ordena por indicador. Valores: pl, pvp, psr, dy, dy_12m, roe,
+              roic, ev_ebitda, market_cap, margem_liquida. Prefixe com '-' para
+              decrescente (ex.: -dy_12m). Nomes livres como 'dividend_yield' são
+              inválidos."
+      summary: Filtra ações por múltiplos critérios fundamentalistas
+      description: Filtra o universo de ações por faixas de indicadores
+        (pl_min/pl_max, pvp_min/pvp_max, dy_min, roe_min, ev_ebitda_max,
+        div_liq_ebitda_max), setor e segmento; ordena por `sort`. Paginação por
+        cursor (use meta.next_cursor). Retorna ticker, nome, setor e os
+        indicadores principais por papel.
+  /v1/screener/fiis:
+    get:
+      responses:
+        "200":
+          description: Página de FIIs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FiiListRow"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: screenFiis
+      tags:
+        - Screener
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: segment
+          schema:
+            type: string
+            description: "Filtra por segmento do FII (substring, case-insensitive), ex.:
+              'Logística', 'Papel'."
+        - in: query
+          name: paper
+          schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+            description: true = papel (CRI), false = tijolo. Omitir = todos.
+        - in: query
+          name: sort
+          schema:
+            type: string
+            description: "Ordena por: ticker, preco, dy, dy_12m, pvp, vacancia, pl,
+              patrimonio_liquido. Prefixe com '-' para decrescente (ex.:
+              -dy_12m)."
+      summary: Universo de FIIs filtrável por segmento e tijolo/papel
+      description: Lista o universo real de FIIs (mart_fii__profile), filtrável por
+        segmento e por tijolo/papel; ordena por `sort`. Paginação por cursor
+        (meta.next_cursor). Retorna ticker, nome, segmento e indicadores (dy,
+        pvp, vacância…).
+  /v1/screener/funds:
+    get:
+      responses:
+        "200":
+          description: Página de fundos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FundScreenerItem"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: screenFunds
+      tags:
+        - Screener
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: classificacao
+          schema:
+            type: string
+            description: "Filtra por classificação CVM do fundo (match exato), ex.: 'Renda
+              Fixa', 'Ações'."
+        - in: query
+          name: min_net_worth
+          schema:
+            type: number
+            description: Patrimônio líquido mínimo (R$).
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum:
+              - net_worth
+              - return_1m
+              - return_12m
+              - return_ytd
+              - shareholders
+            default: net_worth
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      summary: Screener de fundos de investimento (CVM 175)
+      description: Ranqueia o universo de fundos (mart_funds__screener) por
+        patrimônio, retorno (1m/12m/YTD) ou nº de cotistas; filtra por
+        classificação CVM e PL mínimo. `return_12m` fica null enquanto não
+        houver 12m de histórico ingerido.
+  /v1/macro/gears:
+    get:
+      responses:
+        "200":
+          description: Sinais por engrenagem
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  as_of:
+                    type:
+                      - string
+                      - "null"
+                  gears:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        gear:
+                          type: string
+                        indicators:
+                          type: array
+                          items:
+                            $ref: "#/components/schemas/RegimeSignal"
+                      required:
+                        - gear
+                        - indicators
+                required:
+                  - as_of
+                  - gears
+        default: *a1
+      operationId: getMacroGears
+      tags:
+        - Macro
+      parameters:
+        - in: query
+          name: gear
+          schema:
+            type: string
+            enum:
+              - monetary
+              - inflation
+              - growth
+              - employment
+              - credit
+              - fiscal
+              - external
+              - sovereign_risk
+              - global
+              - currency
+              - cross_asset
+        - in: query
+          name: at
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Engrenagens macro (sinais por seção)
+  /v1/macro/regime:
+    get:
+      responses:
+        "200":
+          description: Snapshot do regime
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegimeSnapshot"
+        default: *a1
+      operationId: getMacroRegime
+      tags:
+        - Macro
+      parameters:
+        - in: query
+          name: at
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Regime econômico (quadrante crescimento × inflação)
+  /v1/macro/expectations:
+    get:
+      responses:
+        "200":
+          description: Expectativas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  indicator:
+                    type: string
+                  reference:
+                    type:
+                      - string
+                      - "null"
+                  realized:
+                    type:
+                      - number
+                      - "null"
+                  surveys:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Expectation"
+                required:
+                  - indicator
+                  - reference
+                  - realized
+                  - surveys
+        default: *a1
+      operationId: getMarketExpectations
+      tags:
+        - Macro
+      parameters:
+        - in: query
+          name: indicator
+          schema:
+            type: string
+            enum:
+              - ipca
+              - selic
+              - pib
+              - cambio
+          required: true
+        - in: query
+          name: reference
+          schema:
+            type: string
+            description: "Ano de referência do consenso, ex.: '2026'. Omitir retorna TODAS
+              as referências (mistura anos); informe um ano para uma série
+              limpa."
+          required: false
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+          required: false
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+          required: false
+      summary: Expectativas Focus (consenso por indicador)
+      description: Consenso do Boletim Focus (BCB) para ipca, selic, pib ou cambio.
+        Informe `reference` (ano) para uma série limpa; sem ele, mistura todos
+        os anos de referência.
+  /v1/bonds/tesouro/yield-curve:
+    get:
+      responses:
+        "200":
+          description: Curva de juros
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date:
+                    type:
+                      - string
+                      - "null"
+                  kind:
+                    type: string
+                    enum:
+                      - nominal
+                      - real
+                  points:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        maturity:
+                          type: string
+                        years:
+                          type:
+                            - number
+                            - "null"
+                        rate:
+                          type: number
+                      required:
+                        - maturity
+                        - years
+                        - rate
+                required:
+                  - date
+                  - kind
+                  - points
+        default: *a1
+      operationId: getYieldCurve
+      tags:
+        - Bonds
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: "Data de referência da curva (default: mais recente)."
+        - in: query
+          name: kind
+          schema:
+            type: string
+            enum:
+              - nominal
+              - real
+            default: nominal
+            description: nominal = juros prefixados (LTN/NTN-F); real = juros reais IPCA+
+              (NTN-B).
+      summary: Curva de juros (Tesouro), um ponto por vencimento
+  /v1/bonds/tesouro:
+    get:
+      responses:
+        "200":
+          description: Página de títulos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TesouroBondQuote"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listTesouroBonds
+      tags:
+        - Bonds
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum:
+              - LTN
+              - NTN-F
+              - NTN-B
+              - NTN-B-Principal
+              - LFT
+              - RENDA+
+              - EDUCA+
+            description: "Tipo do título: LTN (prefixado), NTN-F (prefixado c/ juros),
+              NTN-B(-Principal) (IPCA+), LFT (Selic), RENDA+, EDUCA+."
+        - in: query
+          name: maturity
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: Filtra por vencimento (YYYY-MM-DD).
+        - in: query
+          name: date
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: "Data de referência das taxas/preços (default: mais recente)."
+      summary: Títulos do Tesouro Direto (taxas e preços)
+  /v1/indices:
+    get:
+      responses:
+        "200":
+          description: Lista de índices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IndexMeta"
+        default: *a1
+      operationId: listIndices
+      tags:
+        - Indices
+      parameters: []
+      summary: Índices disponíveis (IBOV, IFIX, ...)
+      description: Catálogo dos índices da B3 cobertos (IBOV, IFIX, IBXX/IBrX-100,
+        SMLL, IDIV, ICON…) com código e nome.
+  /v1/indices/{code}/quotes:
+    get:
+      responses:
+        "200":
+          description: Página de níveis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Observation"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listIndexQuotes
+      tags:
+        - Indices
+      parameters:
+        - in: path
+          name: code
+          schema:
+            type: string
+            minLength: 1
+            description: "Código do índice, ex.: IBOV, IFIX, IBXX, SMLL, IDIV, ICON. Ver
+              listIndices."
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Série de níveis diários de um índice
+  /v1/indices/{code}/intraday:
+    get:
+      responses:
+        "200":
+          description: Série intradiária
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntradaySeries"
+        default: *a1
+      operationId: getIndexIntraday
+      tags:
+        - Quotes
+      parameters:
+        - in: path
+          name: code
+          schema:
+            type: string
+            minLength: 1
+            description: "Código do índice, ex.: IBOV, IFIX, IBXX, SMLL, IDIV, ICON. Ver
+              listIndices."
+          required: true
+        - in: query
+          name: session
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: Sessão (AAAA-MM-DD); default = sessão intradiária mais recente.
+      summary: Série intradiária do índice (delay de 15 min)
+      description: Níveis intradiários do pregão; `session` filtra o pregão (default =
+        mais recente).
+  /v1/indices/{code}/composition:
+    get:
+      responses:
+        "200":
+          description: Composição teórica
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexComposition"
+        default: *a1
+      operationId: getIndexComposition
+      tags:
+        - Indices
+      parameters:
+        - in: path
+          name: code
+          schema:
+            type: string
+            minLength: 1
+            description: "Código do índice, ex.: IBOV, IFIX, IBXX, SMLL, IDIV, ICON. Ver
+              listIndices."
+          required: true
+      summary: Composição teórica do índice (carteira teórica vigente)
+  /v1/series:
+    get:
+      responses:
+        "200":
+          description: Página do catálogo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SeriesMeta"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listSeries
+      tags:
+        - Macro
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: source
+          schema:
+            type: string
+            enum:
+              - bcb_sgs
+              - bcb_focus
+              - ibge_sidra
+              - fred
+              - ipeadata
+              - tesouro_direto
+        - in: query
+          name: search
+          schema:
+            type: string
+      summary: Catálogo de séries (BCB/IBGE/FRED/...)
+  /v1/series/{source}/{series_id}:
+    get:
+      responses:
+        "200":
+          description: Série com metadados e observações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: "#/components/schemas/SeriesMeta"
+                  observations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Observation"
+                required:
+                  - meta
+                  - observations
+        default: *a1
+      operationId: getSeries
+      tags:
+        - Macro
+      parameters:
+        - in: path
+          name: source
+          schema:
+            type: string
+            minLength: 1
+            description: "Fonte: bcb_sgs | bcb_focus | ibge_sidra | fred | ipeadata |
+              tesouro_direto."
+          required: true
+        - in: path
+          name: series_id
+          schema:
+            type: string
+            minLength: 1
+            description: "ID da série na fonte. Em bcb_sgs: 432=Selic meta (%a.a.), 12=CDI
+              diário, 433=IPCA mês, 13522=IPCA 12m, 1=USD/BRL, 189=IGP-M. Use
+              listSeries para descobrir outras."
+          required: true
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: accumulated
+          schema:
+            type: string
+            enum:
+              - none
+              - 12m
+            default: none
+            description: "Transformação: none (default) ou 12m (acumulado 12 meses, p/
+              séries de variação como IPCA)."
+      summary: Observações de uma série (com acumulados opcionais)
+      description: "Série temporal (data, valor) de uma fonte macro (BCB SGS, IBGE
+        SIDRA, FRED…). `source`+`series_id` identificam a série;
+        `accumulated=12m` acumula variações. Ex.: bcb_sgs/432 = Selic meta."
+  /v1/fiis/{ticker}:
+    get:
+      responses:
+        "200":
+          description: FII
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fii"
+        default: *a1
+      operationId: getFii
+      tags:
+        - FIIs
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+      summary: Perfil do fundo imobiliário
+  /v1/fiis/{ticker}/indicators:
+    get:
+      responses:
+        "200":
+          description: Indicadores do FII
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticker:
+                    type: string
+                  reference_date:
+                    type:
+                      - string
+                      - "null"
+                  indicators:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IndicatorValue"
+                required:
+                  - ticker
+                  - reference_date
+                  - indicators
+        default: *a1
+      operationId: getFiiIndicators
+      tags:
+        - FIIs
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+      summary: Indicadores do FII (snapshot)
+      description: "Snapshot dos indicadores do FII: dividend yield (mês e 12m), P/VP,
+        vacância, patrimônio líquido, valor patrimonial por cota (vp_cota) e nº
+        de cotistas. Para a série temporal use o histórico."
+  /v1/fiis/{ticker}/indicators/history:
+    get:
+      responses:
+        "200":
+          description: Série do indicador
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticker:
+                    type: string
+                  name:
+                    type: string
+                  label:
+                    type: string
+                  unit:
+                    type: string
+                    enum: *a2
+                  observations:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Observation"
+                required:
+                  - ticker
+                  - name
+                  - label
+                  - unit
+                  - observations
+        default: *a1
+      operationId: getFiiIndicatorHistory
+      tags:
+        - FIIs
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: name
+          schema:
+            type: string
+            minLength: 1
+            description: "Indicador do histórico mensal do FII (informe). Valores: vp_cota,
+              dividend_yield_mes, patrimonio_liquido, cotistas."
+          required: true
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+          required: false
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+          required: false
+      summary: Histórico de um indicador do FII (informe mensal)
+  /v1/fiis/{ticker}/distributions:
+    get:
+      responses:
+        "200":
+          description: Página de distribuições
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FiiDistribution"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listFiiDistributions
+      tags:
+        - FIIs
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Distribuições (rendimentos) do FII
+  /v1/fiis/{ticker}/reports:
+    get:
+      responses:
+        "200":
+          description: Página de informes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FiiMonthlyReport"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listFiiReports
+      tags:
+        - FIIs
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Informes mensais do FII
+  /v1/bdr:
+    get:
+      responses:
+        "200":
+          description: Página de BDRs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BdrProfile"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listBdrs
+      tags:
+        - BDR
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: search
+          schema:
+            type: string
+      summary: Catálogo de BDRs (recibos de ações estrangeiras)
+  /v1/bdr/{ticker}:
+    get:
+      responses:
+        "200":
+          description: BDR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BdrProfile"
+        default: *a1
+      operationId: getBdr
+      tags:
+        - BDR
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+      summary: Perfil de um BDR
+  /v1/bdr/{ticker}/quotes:
+    get:
+      responses:
+        "200":
+          description: Página de cotações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BdrQuote"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listBdrQuotes
+      tags:
+        - BDR
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Cotações EOD de um BDR
+      description: Preços do BDR (events_only). BDR fica `adjust_quality='no_event_source'`.
+  /v1/etfs:
+    get:
+      responses:
+        "200":
+          description: Página de ETFs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EtfProfile"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listEtfs
+      tags:
+        - ETFs
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: segment
+          schema:
+            type: string
+      summary: Catálogo de ETFs listados na B3
+  /v1/etfs/{ticker}:
+    get:
+      responses:
+        "200":
+          description: ETF
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EtfProfile"
+        default: *a1
+      operationId: getEtf
+      tags:
+        - ETFs
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+      summary: Perfil de um ETF
+  /v1/funds:
+    get:
+      responses:
+        "200":
+          description: Página de fundos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FundProfile"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listFunds
+      tags:
+        - Funds
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: classificacao
+          schema:
+            type: string
+            description: "Classificação CVM (match exato), ex.: 'Renda Fixa'."
+      summary: Catálogo de fundos de investimento (CVM 175)
+  /v1/funds/{cnpj}:
+    get:
+      responses:
+        "200":
+          description: Fundo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FundProfile"
+        default: *a1
+      operationId: getFund
+      tags:
+        - Funds
+      parameters:
+        - in: path
+          name: cnpj
+          schema:
+            type: string
+          required: true
+      summary: Perfil de um fundo pelo CNPJ da classe
+  /v1/funds/{cnpj}/quotes:
+    get:
+      responses:
+        "200":
+          description: Página de cotas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FundQuote"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listFundQuotes
+      tags:
+        - Funds
+      parameters:
+        - in: path
+          name: cnpj
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Série diária de cota/PL/fluxo de um fundo
+  /v1/funds/{cnpj}/holdings:
+    get:
+      responses:
+        "200":
+          description: Página de posições
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FundHolding"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listFundHoldings
+      tags:
+        - Funds
+      parameters:
+        - in: path
+          name: cnpj
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: date
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: Competência (AAAA-MM-DD); default = mais recente.
+      summary: Carteira (holdings) de um fundo
+      description: "Posições do fundo (BLC_4 do CDA): ações, BDR, opções e debêntures
+        com valor a mercado. Competência mais recente por default; use `date`
+        (AAAA-MM-DD) p/ outra."
+  /v1/market/investor-flow:
+    get:
+      responses:
+        "200":
+          description: Página de fluxo diário
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InvestorFlow"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listInvestorFlow
+      tags:
+        - Market
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: investor_type
+          schema:
+            type: string
+            description: Investidor Estrangeiro | Institucionais | ...
+      summary: Fluxo diário por perfil de investidor (participação na B3)
+      description: "Participação MTD (mês a mês) de cada perfil — Estrangeiro,
+        Institucionais, PF, Instituições Financeiras, Outros — em compras/vendas
+        (R$ mil e %), com fluxo líquido diário derivado. Fonte: Boletim Diário
+        do Mercado (BDM/BDI) da B3."
+  /v1/market/investor-flow/monthly:
+    get:
+      responses:
+        "200":
+          description: Página de fluxo mensal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InvestorFlowMonthly"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listInvestorFlowMonthly
+      tags:
+        - Market
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: month
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: 1º dia do mês de referência, ex. 2026-05-01
+        - in: query
+          name: investor_type
+          schema:
+            type: string
+        - in: query
+          name: segment
+          schema:
+            type: string
+            description: vista | termo | opcoes | exercicio_opcoes | blocos | total_geral
+      summary: Participação mensal por perfil × segmento de mercado
+      description: Fechamento mensal por perfil de investidor e segmento (à vista,
+        termo, opções, exercício, blocos, total geral), em R$ e %.
+  /v1/offerings:
+    get:
+      responses:
+        "200":
+          description: Página de ofertas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PublicOffering"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listOfferings
+      tags:
+        - Primary Market
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: search
+          schema:
+            type: string
+            description: Nome ou CNPJ do emissor.
+        - in: query
+          name: regime
+          schema:
+            type: string
+            enum:
+              - ICVM_400_476
+              - RCVM_160
+        - in: query
+          name: tipo_ativo
+          schema:
+            type: string
+            description: "Ex.: 'Ações', 'Debêntures'."
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Ofertas públicas de distribuição (mercado primário)
+      description: "Registro de ofertas públicas (IPO/follow-on de ações, debêntures,
+        cotas de fundos), unificando o histórico ICVM 400/476 e o rito
+        automático RCVM 160. Filtrável por emissor, regime, tipo de ativo e
+        período de registro. Fonte: CVM."
+  /v1/options/{ticker}/chain:
+    get:
+      responses:
+        "200":
+          description: Cadeia de opções
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionsChain"
+        default: *a1
+      operationId: getOptionsChain
+      tags:
+        - Options
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+        - in: query
+          name: expiry
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+            description: Filtra a cadeia por vencimento (YYYY-MM-DD). Ver
+              listOptionExpiries.
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum:
+              - call
+              - put
+            description: "Filtra por tipo: call ou put."
+      summary: Cadeia de opções vigente de um subjacente
+      description: Séries vivas (não vencidas) que negociaram; filtre por `expiry`/`type`.
+  /v1/options/{ticker}/expiries:
+    get:
+      responses:
+        "200":
+          description: Vencimentos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptionExpiries"
+        default: *a1
+      operationId: listOptionExpiries
+      tags:
+        - Options
+      parameters:
+        - in: path
+          name: ticker
+          schema:
+            type: string
+            pattern: ^[A-Z][A-Z0-9]{3}[0-9]{0,2}$
+          required: true
+      summary: Vencimentos disponíveis de um subjacente
+  /v1/options/{option}/quotes:
+    get:
+      responses:
+        "200":
+          description: Página de cotações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OptionQuote"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listOptionQuotes
+      tags:
+        - Options
+      parameters:
+        - in: path
+          name: option
+          schema:
+            type: string
+            pattern: ^[A-Z0-9]{4,14}$
+            description: "Código da SÉRIE de opção (ex.: PETRF338), não o subjacente.
+              Descubra via getOptionsChain do ativo."
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Histórico EOD de uma série de opção
+  /v1/crypto/{symbol}/quotes:
+    get:
+      responses:
+        "200":
+          description: Página de candles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CryptoCandle"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: integer
+                        description: Itens nesta página
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default: *a1
+      operationId: listCryptoQuotes
+      tags:
+        - Crypto
+      parameters:
+        - in: path
+          name: symbol
+          schema:
+            type: string
+            pattern: ^[A-Z0-9]+$
+            minLength: 3
+            maxLength: 16
+            description: "Símbolo do criptoativo, ex.: BTC, ETH, SOL."
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20000
+            default: 100
+        - in: query
+          name: interval
+          schema:
+            type: string
+            enum:
+              - 1d
+              - 1h
+            default: 1d
+        - in: query
+          name: from
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+        - in: query
+          name: to
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}-\d{2}$
+      summary: Candles de um criptoativo (diário; 1h vazio no v1)
+  /v1/search:
+    get:
+      responses:
+        "200":
+          description: Resultados ranqueados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+        default: *a1
+      operationId: search
+      tags:
+        - System
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+            description: Termo de busca (ticker ou nome) — ações, FIIs, índices, títulos e
+              séries macro. Ótimo p/ resolver ticker↔nome.
+          required: true
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          required: false
+      summary: Busca unificada (typeahead) por ações/FIIs/índices/títulos/macro
+  /v1/ingest:
+    get:
+      responses:
+        "200":
+          description: Saúde da ingestão
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  latest:
+                    oneOf:
+                      - allOf:
+                          - $ref: "#/components/schemas/IngestRunSummary"
+                        properties:
+                          errors:
+                            type: array
+                            items:
+                              type: string
+                        required:
+                          - errors
+                      - type: "null"
+                  sources:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IngestSourceHealth"
+                  recent_runs:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IngestRunSummary"
+                required:
+                  - latest
+                  - sources
+                  - recent_runs
+        default: *a1
+      operationId: getIngestHealth
+      tags:
+        - System
+      parameters: []
+      summary: Saúde da ingestão (última run, fontes, histórico)
