@@ -1,0 +1,57 @@
+{
+  "name": "@databolsa/mcp",
+  "version": "1.0.12",
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "Servidor MCP read-only para a Serving API pública do DataBolsa, com tools geradas a partir do contrato OpenAPI.",
+  "bin": {
+    "databolsa-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "dev": "bun src/index.ts",
+    "start": "node dist/index.js",
+    "stdio": "bun src/stdio.ts",
+    "http": "bun src/http.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "bun build src/index.ts --target node --outfile dist/index.js && sed -i '1s|^#!.*|#!/usr/bin/env node|' dist/index.js && cp ../../api/openapi.yaml dist/openapi.yaml",
+    "prepack": "bun run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "yaml": "^2.5.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Rodrigo Klosowski",
+  "homepage": "https://github.com/databolsahq/databolsa/tree/main/packages/mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/databolsahq/databolsa.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/databolsahq/databolsa/issues"
+  },
+  "keywords": [
+    "databolsa",
+    "mcp",
+    "model-context-protocol",
+    "b3",
+    "bovespa",
+    "finance",
+    "ai",
+    "agents"
+  ]
+}
