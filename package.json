@@ -1,0 +1,19 @@
+{
+  "name": "databolsa",
+  "version": "1.0.21",
+  "private": true,
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/sdk",
+    "packages/cli",
+    "packages/mcp"
+  ],
+  "scripts": {
+    "typecheck": "bun run --filter '*' typecheck",
+    "cli": "bun run packages/cli/src/index.ts",
+    "mcp:dev": "bun run packages/mcp/src/index.ts",
+    "mcp:inspect": "bunx @modelcontextprotocol/inspector bun run packages/mcp/src/stdio.ts",
+    "gen:api-types": "bun run --cwd packages/sdk gen:schema",
+    "test:packages": "node scripts/smoke-packages.mjs --offline"
+  }
+}
