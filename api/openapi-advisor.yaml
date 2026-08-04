@@ -1,0 +1,2576 @@
+openapi: 3.1.0
+info:
+  title: DataBolsa Advisor API
+  description: >-
+    Camada organizacional do DataBolsa para escritórios de assessoria,
+    consultorias e wealth managers:
+
+    organizações, membros e papéis, clientes e famílias, assessor responsável,
+    carteiras por cliente,
+
+    taxas e trilha de auditoria.
+
+
+    Convenções:
+
+    - Autenticação por chave de organização (`db_org_...`) ou credencial pessoal
+    de membro.
+
+    - Todo recurso vive dentro de uma organização; recurso fora do seu escopo
+    responde 404.
+
+    - Licença vencida responde 402 (`code: license_required`) nas escritas;
+    leituras seguem abertas.
+
+    - Erros seguem RFC 9457 (`application/problem+json`).
+
+    - Toda escrita entra na trilha de auditoria da organização.
+  version: 3.5.1
+  contact:
+    name: DataBolsa
+servers:
+  - url: https://api.databolsa.com
+    description: Produção
+security:
+  - bearerApiKey: []
+components:
+  securitySchemes:
+    bearerApiKey:
+      type: http
+      scheme: bearer
+  schemas: {}
+tags:
+  - name: Advisor · Conta
+    description: Identidade do chamador e organizações acessíveis
+  - name: Advisor · Organização
+    description: Organização, membros, papéis, convites e licença
+  - name: Advisor · Clientes
+    description: Clientes, famílias, assessor responsável e perfil
+  - name: Advisor · Carteiras
+    description: Carteiras por cliente — ativos, ledger e posições
+  - name: Advisor · Taxas
+    description: Tabelas de taxas do escritório e vínculo por cliente
+  - name: Advisor · Auditoria
+    description: Trilha de auditoria da organização
+paths:
+  /v1/advisor/me:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  principal:
+                    type: string
+                    enum:
+                      - member
+                      - org_key
+                  user_id:
+                    type:
+                      - string
+                      - "null"
+                  organizations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        org_id:
+                          type: string
+                        org_slug:
+                          type: string
+                        org_name:
+                          type: string
+                        role:
+                          type: string
+                          enum:
+                            - owner
+                            - admin
+                            - advisor
+                            - viewer
+                        member_id:
+                          type: string
+                      required:
+                        - org_id
+                        - org_slug
+                        - org_name
+                        - role
+                        - member_id
+                required:
+                  - principal
+                  - user_id
+                  - organizations
+        default: &a1
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetMe
+      tags:
+        - Advisor · Conta
+      parameters: []
+      summary: Identidade do chamador e organizações acessíveis
+      description: Com credencial pessoal de membro, lista as organizações em que o
+        usuário tem assento. Com chave de organização, retorna a própria
+        organização da chave.
+  /v1/advisor/invitations/accept:
+    post:
+      responses:
+        "200":
+          description: Assento criado/reativado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  org_id:
+                    type: string
+                  org_slug:
+                    type: string
+                  member_id:
+                    type: string
+                  role:
+                    type: string
+                required:
+                  - org_id
+                  - org_slug
+                  - member_id
+                  - role
+        default: *a1
+      operationId: advisorAcceptInvitation
+      tags:
+        - Advisor · Conta
+      parameters: []
+      summary: Aceitar convite de organização
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  minLength: 16
+              required:
+                - token
+  /v1/advisor/orgs/{org}:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  slug:
+                    type: string
+                  name:
+                    type: string
+                  cnpj:
+                    type:
+                      - string
+                      - "null"
+                  cvm_registration:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  settings:
+                    type: object
+                    properties:
+                      client_visibility:
+                        type: string
+                        enum: &a2
+                          - all
+                          - assigned
+                    required:
+                      - client_visibility
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - slug
+                  - name
+                  - cnpj
+                  - cvm_registration
+                  - status
+                  - settings
+                  - created_at
+        default: *a1
+      operationId: advisorGetOrganization
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Detalhe da organização
+    patch:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  slug:
+                    type: string
+                  name:
+                    type: string
+                  cnpj:
+                    type:
+                      - string
+                      - "null"
+                  cvm_registration:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  settings:
+                    type: object
+                    properties:
+                      client_visibility:
+                        type: string
+                        enum: *a2
+                    required:
+                      - client_visibility
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - slug
+                  - name
+                  - cnpj
+                  - cvm_registration
+                  - status
+                  - settings
+                  - created_at
+        default: *a1
+      operationId: advisorUpdateOrganization
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Atualizar nome/configurações da organização
+      description: "Inclui `settings.client_visibility`: `all` (todos veem todos os
+        clientes) ou `assigned` (assessor/viewer só veem clientes atribuídos)."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                settings:
+                  type: object
+                  properties:
+                    client_visibility:
+                      type: string
+                      enum:
+                        - all
+                        - assigned
+  /v1/advisor/orgs/{org}/license:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plan:
+                    type:
+                      - string
+                      - "null"
+                  seats_limit:
+                    type: number
+                  clients_limit:
+                    type:
+                      - number
+                      - "null"
+                  expires_at:
+                    type:
+                      - string
+                      - "null"
+                  expired:
+                    type: boolean
+                required:
+                  - plan
+                  - seats_limit
+                  - clients_limit
+                  - expires_at
+                  - expired
+        default: *a1
+      operationId: advisorGetLicense
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Licença e limites vigentes
+  /v1/advisor/orgs/{org}/members:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        user_id:
+                          type: string
+                        role:
+                          type: string
+                          enum: &a3
+                            - owner
+                            - admin
+                            - advisor
+                            - viewer
+                        display_name:
+                          type:
+                            - string
+                            - "null"
+                        status:
+                          type: string
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - user_id
+                        - role
+                        - display_name
+                        - status
+                        - created_at
+                required:
+                  - data
+        default: *a1
+      operationId: advisorListMembers
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Membros da organização
+  /v1/advisor/orgs/{org}/members/{memberId}:
+    patch:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  user_id:
+                    type: string
+                  role:
+                    type: string
+                    enum: *a3
+                  display_name:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - user_id
+                  - role
+                  - display_name
+                  - status
+                  - created_at
+        default: *a1
+      operationId: advisorUpdateMember
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: memberId
+          required: true
+      summary: Atualizar papel/status de um membro
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: &a4
+                    - owner
+                    - admin
+                    - advisor
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - suspended
+                display_name:
+                  type: string
+  /v1/advisor/orgs/{org}/invitations:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        email:
+                          type: string
+                        role:
+                          type: string
+                          enum: *a3
+                        status:
+                          type: string
+                        expires_at:
+                          type: string
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - email
+                        - role
+                        - status
+                        - expires_at
+                        - created_at
+                required:
+                  - data
+        default: *a1
+      operationId: advisorListInvitations
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Convites da organização
+    post:
+      responses:
+        "200":
+          description: Convite criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invitation_id:
+                    type: string
+                  invite_url:
+                    type: string
+                required:
+                  - invitation_id
+                  - invite_url
+        default: *a1
+      operationId: advisorCreateInvitation
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Convidar membro (e-mail + papel)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: *a4
+              required:
+                - email
+                - role
+  /v1/advisor/orgs/{org}/invitations/{invitationId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revoked:
+                    type: boolean
+                required:
+                  - revoked
+        default: *a1
+      operationId: advisorRevokeInvitation
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: invitationId
+          required: true
+      summary: Revogar convite pendente
+  /v1/advisor/orgs/{org}/overview:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  aum_total:
+                    type:
+                      - number
+                      - "null"
+                  clients:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                      prospect:
+                        type: number
+                      active:
+                        type: number
+                    required:
+                      - total
+                      - prospect
+                      - active
+                  by_class:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset_type:
+                          type: string
+                        market_value:
+                          type: number
+                      required:
+                        - asset_type
+                        - market_value
+                  by_advisor:
+                    type:
+                      - array
+                      - "null"
+                    items:
+                      type: object
+                      properties:
+                        member_id:
+                          type:
+                            - string
+                            - "null"
+                        display_name:
+                          type:
+                            - string
+                            - "null"
+                        clients:
+                          type: number
+                        aum:
+                          type:
+                            - number
+                            - "null"
+                      required:
+                        - member_id
+                        - display_name
+                        - clients
+                        - aum
+                  by_client:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        client_id:
+                          type: string
+                        name:
+                          type: string
+                        status:
+                          type: string
+                        owner_member_id:
+                          type:
+                            - string
+                            - "null"
+                        owner_display_name:
+                          type:
+                            - string
+                            - "null"
+                        aum:
+                          type:
+                            - number
+                            - "null"
+                        portfolios:
+                          type: number
+                      required:
+                        - client_id
+                        - name
+                        - status
+                        - owner_member_id
+                        - owner_display_name
+                        - aum
+                        - portfolios
+                  recent_activity:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        action:
+                          type: string
+                        summary:
+                          type:
+                            - string
+                            - "null"
+                        via:
+                          type: string
+                        actor_member_id:
+                          type:
+                            - string
+                            - "null"
+                        actor_display_name:
+                          type:
+                            - string
+                            - "null"
+                        entity_type:
+                          type:
+                            - string
+                            - "null"
+                        entity_id:
+                          type:
+                            - string
+                            - "null"
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - action
+                        - summary
+                        - via
+                        - actor_member_id
+                        - actor_display_name
+                        - entity_type
+                        - entity_id
+                        - created_at
+                required:
+                  - aum_total
+                  - clients
+                  - by_class
+                  - by_advisor
+                  - by_client
+                  - recent_activity
+        default: *a1
+      operationId: advisorGetOverview
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Visão geral da organização (agregados)
+      description: "AUM total, clientes, alocação por classe, quebra por assessor
+        (owner/admin) e atividade recente. O escopo é aplicado no servidor:
+        assessor com visibilidade `assigned` recebe o agregado apenas dos
+        clientes atribuídos a ele. Carteiras `proposal` nunca entram nos
+        agregados."
+  /v1/advisor/orgs/{org}/audit:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        action:
+                          type: string
+                        summary:
+                          type:
+                            - string
+                            - "null"
+                        via:
+                          type: string
+                        actor_member_id:
+                          type:
+                            - string
+                            - "null"
+                        actor_display_name:
+                          type:
+                            - string
+                            - "null"
+                        entity_type:
+                          type:
+                            - string
+                            - "null"
+                        entity_id:
+                          type:
+                            - string
+                            - "null"
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - action
+                        - summary
+                        - via
+                        - actor_member_id
+                        - actor_display_name
+                        - entity_type
+                        - entity_id
+                        - created_at
+                  next_cursor:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - data
+                  - next_cursor
+        default: *a1
+      operationId: advisorListAuditLog
+      tags:
+        - Advisor · Auditoria
+      parameters:
+        - in: query
+          name: client_id
+          schema:
+            type: string
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Trilha de auditoria (paginada)
+      description: Eventos da organização em ordem decrescente, com keyset pagination
+        (`cursor` opaco). `client_id` filtra o cliente e suas carteiras.
+        Assessor com visibilidade `assigned` vê apenas eventos dos clientes
+        atribuídos.
+  /v1/advisor/orgs/{org}/families:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        note:
+                          type:
+                            - string
+                            - "null"
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - name
+                        - note
+                        - created_at
+                required:
+                  - data
+        default: *a1
+      operationId: advisorListFamilies
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Famílias da organização
+    post:
+      responses:
+        "200":
+          description: Família criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  note:
+                    type:
+                      - string
+                      - "null"
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - note
+                  - created_at
+        default: *a1
+      operationId: advisorCreateFamily
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Criar família (agrupamento de clientes)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                note:
+                  type: string
+              required:
+                - name
+  /v1/advisor/orgs/{org}/clients:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        kind:
+                          type: string
+                          enum: &a5
+                            - person
+                            - entity
+                        name:
+                          type: string
+                        email:
+                          type:
+                            - string
+                            - "null"
+                        phone:
+                          type:
+                            - string
+                            - "null"
+                        document_id:
+                          type:
+                            - string
+                            - "null"
+                        family_id:
+                          type:
+                            - string
+                            - "null"
+                        status:
+                          type: string
+                          enum: &a6
+                            - prospect
+                            - active
+                            - inactive
+                            - offboarded
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - kind
+                        - name
+                        - email
+                        - phone
+                        - document_id
+                        - family_id
+                        - status
+                        - created_at
+                required:
+                  - data
+        default: *a1
+      operationId: advisorListClients
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Clientes visíveis ao chamador
+      description: Com `settings.client_visibility = assigned`, assessor/viewer só
+        veem clientes atribuídos a eles.
+    post:
+      responses:
+        "200":
+          description: Cliente criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  kind:
+                    type: string
+                    enum: *a5
+                  name:
+                    type: string
+                  email:
+                    type:
+                      - string
+                      - "null"
+                  phone:
+                    type:
+                      - string
+                      - "null"
+                  document_id:
+                    type:
+                      - string
+                      - "null"
+                  family_id:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                    enum: *a6
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - kind
+                  - name
+                  - email
+                  - phone
+                  - document_id
+                  - family_id
+                  - status
+                  - created_at
+        default: *a1
+      operationId: advisorCreateClient
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Cadastrar cliente
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                kind:
+                  type: string
+                  enum:
+                    - person
+                    - entity
+                email:
+                  type:
+                    - string
+                    - "null"
+                  format: email
+                phone:
+                  type:
+                    - string
+                    - "null"
+                document_id:
+                  type:
+                    - string
+                    - "null"
+                family_id:
+                  type:
+                    - string
+                    - "null"
+                status:
+                  type: string
+                  enum:
+                    - prospect
+                    - active
+                owner_member_id:
+                  type:
+                    - string
+                    - "null"
+              required:
+                - name
+  /v1/advisor/orgs/{org}/clients/{clientId}:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  client:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      kind:
+                        type: string
+                        enum: *a5
+                      name:
+                        type: string
+                      email:
+                        type:
+                          - string
+                          - "null"
+                      phone:
+                        type:
+                          - string
+                          - "null"
+                      document_id:
+                        type:
+                          - string
+                          - "null"
+                      family_id:
+                        type:
+                          - string
+                          - "null"
+                      status:
+                        type: string
+                        enum: *a6
+                      created_at:
+                        type: string
+                    required:
+                      - id
+                      - kind
+                      - name
+                      - email
+                      - phone
+                      - document_id
+                      - family_id
+                      - status
+                      - created_at
+                  profile:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      objectives:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            kind:
+                              type: string
+                            description:
+                              type: string
+                            target_amount_cents:
+                              type: integer
+                            target_date:
+                              type: string
+                          required:
+                            - kind
+                      restrictions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum: &a7
+                                - no_asset
+                                - no_class
+                                - max_allocation
+                                - liquidity
+                                - other
+                            symbol:
+                              type: string
+                            asset_class:
+                              type: string
+                            max_pct:
+                              type: number
+                            description:
+                              type: string
+                          required:
+                            - kind
+                      risk_profile:
+                        type:
+                          - string
+                          - "null"
+                      suitability:
+                        type: "null"
+                      horizon:
+                        type:
+                          - string
+                          - "null"
+                      notes:
+                        type:
+                          - string
+                          - "null"
+                      updated_at:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - objectives
+                      - restrictions
+                      - risk_profile
+                      - horizon
+                      - notes
+                      - updated_at
+                  assignments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        member_id:
+                          type: string
+                        member_display_name:
+                          type:
+                            - string
+                            - "null"
+                        role:
+                          type: string
+                      required:
+                        - member_id
+                        - member_display_name
+                        - role
+                required:
+                  - client
+                  - profile
+                  - assignments
+        default: *a1
+      operationId: advisorGetClient
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+      summary: Detalhe do cliente (cadastro + perfil + responsável)
+    patch:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  kind:
+                    type: string
+                    enum: *a5
+                  name:
+                    type: string
+                  email:
+                    type:
+                      - string
+                      - "null"
+                  phone:
+                    type:
+                      - string
+                      - "null"
+                  document_id:
+                    type:
+                      - string
+                      - "null"
+                  family_id:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                    enum: *a6
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - kind
+                  - name
+                  - email
+                  - phone
+                  - document_id
+                  - family_id
+                  - status
+                  - created_at
+        default: *a1
+      operationId: advisorUpdateClient
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+      summary: Atualizar cadastro/status do cliente
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                kind:
+                  type: string
+                  enum:
+                    - person
+                    - entity
+                email:
+                  type:
+                    - string
+                    - "null"
+                  format: email
+                phone:
+                  type:
+                    - string
+                    - "null"
+                document_id:
+                  type:
+                    - string
+                    - "null"
+                family_id:
+                  type:
+                    - string
+                    - "null"
+                status:
+                  type: string
+                  enum: *a6
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default: *a1
+      operationId: advisorDeleteClient
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+      summary: Excluir cliente (remoção real, com carteiras e perfil)
+      description: "Correção de cadastro errado. Para fim de relação, prefira `PATCH
+        status: offboarded` (arquiva preservando histórico)."
+  /v1/advisor/orgs/{org}/clients/{clientId}/assignment:
+    put:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: boolean
+                required:
+                  - updated
+        default: *a1
+      operationId: advisorSetClientAssignment
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+      summary: Definir assessor responsável
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                member_id:
+                  type: string
+              required:
+                - member_id
+  /v1/advisor/orgs/{org}/clients/{clientId}/profile:
+    put:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  objectives:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        kind:
+                          type: string
+                        description:
+                          type: string
+                        target_amount_cents:
+                          type: integer
+                        target_date:
+                          type: string
+                      required:
+                        - kind
+                  restrictions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        kind:
+                          type: string
+                          enum: *a7
+                        symbol:
+                          type: string
+                        asset_class:
+                          type: string
+                        max_pct:
+                          type: number
+                        description:
+                          type: string
+                      required:
+                        - kind
+                  risk_profile:
+                    type:
+                      - string
+                      - "null"
+                  suitability:
+                    type: "null"
+                  horizon:
+                    type:
+                      - string
+                      - "null"
+                  notes:
+                    type:
+                      - string
+                      - "null"
+                  updated_at:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - objectives
+                  - restrictions
+                  - risk_profile
+                  - horizon
+                  - notes
+                  - updated_at
+        default: *a1
+      operationId: advisorUpdateClientProfile
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+      summary: Atualizar objetivos/restrições/contexto do cliente
+      description: O perfil é o contexto que agente, MCP e relatórios leem. Histórico
+        via trilha de auditoria.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                objectives:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      kind:
+                        type: string
+                      description:
+                        type: string
+                      target_amount_cents:
+                        type: integer
+                      target_date:
+                        type: string
+                    required:
+                      - kind
+                restrictions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      kind:
+                        type: string
+                        enum: *a7
+                      symbol:
+                        type: string
+                      asset_class:
+                        type: string
+                      max_pct:
+                        type: number
+                      description:
+                        type: string
+                    required:
+                      - kind
+                risk_profile:
+                  type:
+                    - string
+                    - "null"
+                suitability: {}
+                horizon:
+                  type:
+                    - string
+                    - "null"
+                notes:
+                  type:
+                    - string
+                    - "null"
+  /v1/advisor/orgs/{org}/clients/{clientId}/portfolios:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        client_id:
+                          type: string
+                        name:
+                          type: string
+                        kind:
+                          type: string
+                          enum: &a8
+                            - actual
+                            - proposal
+                        base_currency:
+                          type: string
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - client_id
+                        - name
+                        - kind
+                        - base_currency
+                        - created_at
+                required:
+                  - data
+        default: *a1
+      operationId: advisorListClientPortfolios
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+      summary: Carteiras de um cliente
+    post:
+      responses:
+        "200":
+          description: Carteira criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  client_id:
+                    type: string
+                  name:
+                    type: string
+                  kind:
+                    type: string
+                    enum: *a8
+                  base_currency:
+                    type: string
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - client_id
+                  - name
+                  - kind
+                  - base_currency
+                  - created_at
+        default: *a1
+      operationId: advisorCreateClientPortfolio
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+      summary: Criar carteira para um cliente
+      description: "`kind: proposal` marca estudo/realocação — fica fora do
+        consolidado do cliente."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                kind:
+                  type: string
+                  enum:
+                    - actual
+                    - proposal
+                base_currency:
+                  type: string
+              required:
+                - name
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portfolio:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      client_id:
+                        type: string
+                      name:
+                        type: string
+                      kind:
+                        type: string
+                        enum: *a8
+                      base_currency:
+                        type: string
+                      created_at:
+                        type: string
+                    required:
+                      - id
+                      - client_id
+                      - name
+                      - kind
+                      - base_currency
+                      - created_at
+                  holdings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset_type:
+                          type: string
+                        symbol:
+                          type: string
+                        name:
+                          type: string
+                        qty:
+                          type: number
+                        avg:
+                          type:
+                            - number
+                            - "null"
+                        invested_cost:
+                          type:
+                            - number
+                            - "null"
+                        cost_basis_known:
+                          type: boolean
+                        price:
+                          type:
+                            - number
+                            - "null"
+                        change_pct:
+                          type:
+                            - number
+                            - "null"
+                        market_value:
+                          type:
+                            - number
+                            - "null"
+                        unrealized_pl:
+                          type:
+                            - number
+                            - "null"
+                        unrealized_pct:
+                          type:
+                            - number
+                            - "null"
+                        tx_count:
+                          type: number
+                      required:
+                        - asset_type
+                        - symbol
+                        - name
+                        - qty
+                        - avg
+                        - invested_cost
+                        - cost_basis_known
+                        - price
+                        - change_pct
+                        - market_value
+                        - unrealized_pl
+                        - unrealized_pct
+                        - tx_count
+                  totals:
+                    type: object
+                    properties:
+                      market_value:
+                        type:
+                          - number
+                          - "null"
+                      invested_cost:
+                        type:
+                          - number
+                          - "null"
+                      unrealized_pl:
+                        type:
+                          - number
+                          - "null"
+                    required:
+                      - market_value
+                      - invested_cost
+                      - unrealized_pl
+                required:
+                  - portfolio
+                  - holdings
+                  - totals
+        default: *a1
+      operationId: advisorGetClientPortfolio
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+      summary: Posições e valorização da carteira
+      description: Posição derivada do ledger no motor de cálculo; cotações do
+        DataBolsa Core.
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default: *a1
+      operationId: advisorDeleteClientPortfolio
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+      summary: Remover carteira
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/history:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  points:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: string
+                        patrimonio:
+                          type: number
+                        aporte:
+                          type: number
+                        proventos:
+                          type: number
+                        realizado:
+                          type: number
+                      required:
+                        - month
+                        - patrimonio
+                        - aporte
+                        - proventos
+                        - realizado
+                  twr:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      cumulative:
+                        type: number
+                      annualized:
+                        type:
+                          - number
+                          - "null"
+                      months:
+                        type: number
+                    required:
+                      - cumulative
+                      - annualized
+                      - months
+                  xirr:
+                    type:
+                      - number
+                      - "null"
+                  returns_explain:
+                    type: string
+                required:
+                  - points
+                  - twr
+                  - xirr
+                  - returns_explain
+        default: *a1
+      operationId: advisorGetClientPortfolioHistory
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+      summary: Evolução mensal e retornos da carteira
+      description: Curva mensal de patrimônio × aporte derivada do ledger (mesmo motor
+        do DataBolsa), com TWR e XIRR. Renda fixa entra pelo custo remanescente.
+  /v1/advisor/orgs/{org}/clients/{clientId}/history:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  points:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: string
+                        patrimonio:
+                          type: number
+                        aporte:
+                          type: number
+                        proventos:
+                          type: number
+                        realizado:
+                          type: number
+                      required:
+                        - month
+                        - patrimonio
+                        - aporte
+                        - proventos
+                        - realizado
+                  twr:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      cumulative:
+                        type: number
+                      annualized:
+                        type:
+                          - number
+                          - "null"
+                      months:
+                        type: number
+                    required:
+                      - cumulative
+                      - annualized
+                      - months
+                  xirr:
+                    type:
+                      - number
+                      - "null"
+                  returns_explain:
+                    type: string
+                required:
+                  - points
+                  - twr
+                  - xirr
+                  - returns_explain
+        default: *a1
+      operationId: advisorGetClientHistory
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+      summary: Evolução mensal e retornos consolidados do cliente
+      description: Consolida as carteiras reais do cliente (propostas ficam fora), com
+        TWR e XIRR.
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/ledger:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            asset_type:
+                              type: string
+                            symbol:
+                              type: string
+                            note:
+                              type:
+                                - string
+                                - "null"
+                          required:
+                            - id
+                            - asset_type
+                            - symbol
+                            - note
+                        transactions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              kind:
+                                type: string
+                              trade_date:
+                                type: string
+                              quantity:
+                                type: number
+                              price:
+                                type:
+                                  - number
+                                  - "null"
+                              fees:
+                                type: number
+                              ratio:
+                                type:
+                                  - number
+                                  - "null"
+                              note:
+                                type:
+                                  - string
+                                  - "null"
+                              external_id:
+                                type:
+                                  - string
+                                  - "null"
+                            required:
+                              - id
+                              - kind
+                              - trade_date
+                              - quantity
+                              - price
+                              - fees
+                              - ratio
+                              - note
+                              - external_id
+                      required:
+                        - asset
+                        - transactions
+                required:
+                  - data
+        default: *a1
+      operationId: advisorGetClientPortfolioLedger
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+      summary: Ativos e lançamentos (ledger) da carteira
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/import:
+    post:
+      responses:
+        "200":
+          description: Resumo do import
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source:
+                    type: string
+                    enum:
+                      - negociacao
+                      - movimentacao
+                      - manual
+                  parsed:
+                    type: number
+                  imported:
+                    type: number
+                  duplicates_skipped:
+                    type: number
+                  symbols:
+                    type: array
+                    items:
+                      type: string
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                  period:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      from:
+                        type:
+                          - string
+                          - "null"
+                      to:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - from
+                      - to
+                required:
+                  - source
+                  - parsed
+                  - imported
+                  - duplicates_skipped
+                  - symbols
+                  - warnings
+                  - period
+        default: *a1
+      operationId: advisorImportClientPortfolioFile
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+      summary: Importar planilha no ledger da carteira
+      description: Multipart com campo `file` (.xlsx ou .csv). Auto-detecta
+        Negociação/Movimentação da B3 e o template manual; idempotente por linha
+        (reimportar não duplica).
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/assets:
+    post:
+      responses:
+        "200":
+          description: Ativo adicionado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  asset_type:
+                    type: string
+                  symbol:
+                    type: string
+                  note:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - id
+                  - asset_type
+                  - symbol
+                  - note
+        default: *a1
+      operationId: advisorAddClientPortfolioAsset
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+      summary: Adicionar ativo à carteira
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                asset_type:
+                  type: string
+                  minLength: 2
+                symbol:
+                  type: string
+                  minLength: 1
+                note:
+                  type:
+                    - string
+                    - "null"
+                meta: {}
+              required:
+                - asset_type
+                - symbol
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/assets/{assetId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default: *a1
+      operationId: advisorRemoveClientPortfolioAsset
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: assetId
+          required: true
+      summary: Remover ativo (e seu ledger) da carteira
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/assets/{assetId}/transactions:
+    post:
+      responses:
+        "200":
+          description: Lançamento criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  kind:
+                    type: string
+                  trade_date:
+                    type: string
+                  quantity:
+                    type: number
+                  price:
+                    type:
+                      - number
+                      - "null"
+                  fees:
+                    type: number
+                  ratio:
+                    type:
+                      - number
+                      - "null"
+                  note:
+                    type:
+                      - string
+                      - "null"
+                  external_id:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - id
+                  - kind
+                  - trade_date
+                  - quantity
+                  - price
+                  - fees
+                  - ratio
+                  - note
+                  - external_id
+        default: *a1
+      operationId: advisorAddClientPortfolioTransaction
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: assetId
+          required: true
+      summary: Lançar transação no ledger do ativo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - buy
+                    - sell
+                    - split
+                trade_date:
+                  type: string
+                  pattern: ^\d{4}-\d{2}-\d{2}$
+                quantity:
+                  type: number
+                price:
+                  type:
+                    - number
+                    - "null"
+                fees:
+                  type: number
+                ratio:
+                  type:
+                    - number
+                    - "null"
+                note:
+                  type:
+                    - string
+                    - "null"
+                external_id:
+                  type:
+                    - string
+                    - "null"
+              required:
+                - kind
+                - trade_date
+                - quantity
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/transactions/{txId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default: *a1
+      operationId: advisorDeleteClientPortfolioTransaction
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: txId
+          required: true
+      summary: Remover lançamento do ledger
+  /v1/advisor/orgs/{org}/keys:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        prefix:
+                          type: string
+                        last4:
+                          type: string
+                        key_role:
+                          type: string
+                          enum: &a9
+                            - full
+                            - read
+                        created_at:
+                          type: string
+                        last_used_at:
+                          type:
+                            - string
+                            - "null"
+                        revoked_at:
+                          type:
+                            - string
+                            - "null"
+                      required:
+                        - id
+                        - name
+                        - prefix
+                        - last4
+                        - key_role
+                        - created_at
+                        - last_used_at
+                        - revoked_at
+                required:
+                  - data
+        default: *a1
+      operationId: advisorListOrgKeys
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Chaves de API da organização
+    post:
+      responses:
+        "200":
+          description: Chave emitida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  record:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      prefix:
+                        type: string
+                      last4:
+                        type: string
+                      key_role:
+                        type: string
+                        enum: *a9
+                      created_at:
+                        type: string
+                      last_used_at:
+                        type:
+                          - string
+                          - "null"
+                      revoked_at:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - id
+                      - name
+                      - prefix
+                      - last4
+                      - key_role
+                      - created_at
+                      - last_used_at
+                      - revoked_at
+                required:
+                  - key
+                  - record
+        default: *a1
+      operationId: advisorCreateOrgKey
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+      summary: Emitir chave de organização (db_org_...)
+      description: "A chave completa é retornada UMA única vez. `key_role: read`
+        limita a leituras; `full` opera como admin. Chave de organização enxerga
+        todos os clientes."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                key_role:
+                  type: string
+                  enum:
+                    - full
+                    - read
+              required:
+                - name
+  /v1/advisor/orgs/{org}/keys/{keyId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revoked:
+                    type: boolean
+                required:
+                  - revoked
+        default: *a1
+      operationId: advisorRevokeOrgKey
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+        - schema:
+            type: string
+          in: path
+          name: keyId
+          required: true
+      summary: Revogar chave de organização
