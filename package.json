@@ -1,0 +1,25 @@
+{
+  "name": "databolsa",
+  "version": "3.6.5",
+  "private": true,
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/core/sdk",
+    "packages/core/cli",
+    "packages/core/mcp",
+    "packages/advisor/advisor-sdk",
+    "packages/advisor/advisor-cli",
+    "packages/advisor/advisor-mcp"
+  ],
+  "scripts": {
+    "typecheck": "bun run --filter '*' typecheck",
+    "cli": "bun run packages/core/cli/src/index.ts",
+    "advisor-cli": "bun run packages/advisor/advisor-cli/src/index.ts",
+    "mcp:dev": "bun run packages/core/mcp/src/index.ts",
+    "mcp:inspect": "bunx @modelcontextprotocol/inspector bun run packages/core/mcp/src/stdio.ts",
+    "advisor-mcp:dev": "bun run packages/advisor/advisor-mcp/src/index.ts",
+    "gen:api-types": "bun run --cwd packages/core/sdk gen:schema",
+    "gen:api-types:advisor": "bun run --cwd packages/advisor/advisor-sdk gen:schema",
+    "test:packages": "node scripts/smoke-packages.mjs --offline"
+  }
+}
