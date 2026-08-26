@@ -1,0 +1,4537 @@
+{
+  "version": 1,
+  "kinds": [
+    "company",
+    "equity_security",
+    "fund",
+    "service_provider",
+    "instrument",
+    "index",
+    "crypto_asset",
+    "commodity",
+    "country",
+    "indicator",
+    "data_series",
+    "offering",
+    "fund_share_class",
+    "market_event"
+  ],
+  "rels": [
+    {
+      "rel": "administers",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "service_provider",
+        "company"
+      ],
+      "range_kinds": [
+        "fund"
+      ],
+      "note": "ADMINISTRADOR FIDUCIÁRIO — o responsável legal pelo fundo: constitui e registra na CVM; calcula e divulga a cota; contrata os demais prestadores. NÃO é o gestor (`manages`) que decide a carteira — um administrador serve centenas de fundos de gestores diferentes. Único dos quatro prestadores que a CVM publica SEM CNPJ: chega por razão social e é resolvido contra o cadastro ADM_CART pelo nome normalizado — 134 de 135 nomes e 36.914 dos 37.009 fundos medidos em 22/08/2026"
+    },
+    {
+      "rel": "assigned_to",
+      "shape": "snapshot",
+      "max_gap_days": 45,
+      "domain_kinds": [
+        "company",
+        "fund"
+      ],
+      "range_kinds": [
+        "fund"
+      ],
+      "note": "Cessão de recebíveis declarada por competência no informe mensal do FIDC"
+    },
+    {
+      "rel": "audits",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "service_provider",
+        "company"
+      ],
+      "range_kinds": [
+        "fund"
+      ],
+      "note": "Auditor independente vigente no registro da CVM"
+    },
+    {
+      "rel": "contains",
+      "shape": "snapshot",
+      "max_gap_days": 45,
+      "domain_kinds": [
+        "index",
+        "fund"
+      ],
+      "range_kinds": [
+        "equity_security",
+        "fund",
+        "fund_share_class"
+      ],
+      "note": "Composição da carteira teórica do índice (o índice contém o PAPEL e nunca a companhia) e estrutura da classe de fundo (a classe contém suas SUBCLASSES)"
+    },
+    {
+      "rel": "covers",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "data_series"
+      ],
+      "range_kinds": [
+        "country"
+      ],
+      "note": "A SÉRIE COBRE o país a que se refere — `world_bank:NY.GDP.MKTP.CD:DE` cobre a Alemanha. É o eixo que faltava para o país: sem ele, 113 séries do World Bank traziam o país DENTRO da chave (`...:DE`, ISO2) e nada no grafo dizia de quem elas falavam, enquanto o objeto do país existia ao lado sem uma única aresta. SÓ ONDE A FONTE DECLARA. `bcb_sgs` e `fred` ficam de fora de propósito: quem publica não é do que se trata — o Banco Central publica a PTAX, que é sobre o par e não sobre o Brasil, e deduzir país da fonte seria o vínculo inventado de sempre. Quando o catálogo declarar país para elas, elas entram sem mudar o verbo"
+    },
+    {
+      "rel": "custodies",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "company",
+        "service_provider"
+      ],
+      "range_kinds": [
+        "fund"
+      ],
+      "note": "Custodiante vigente no registro da CVM"
+    },
+    {
+      "rel": "exposed_to_issuer",
+      "shape": "snapshot",
+      "max_gap_days": 45,
+      "domain_kinds": [
+        "fund",
+        "index"
+      ],
+      "range_kinds": [
+        "company"
+      ],
+      "note": "Exposição do detentor à EMISSORA — derivada de holds/contains pelo papel; responde COM QUEM e nunca QUANTO (sem magnitude de propósito)"
+    },
+    {
+      "rel": "forecasts",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "data_series"
+      ],
+      "range_kinds": [
+        "indicator",
+        "index"
+      ],
+      "note": "A série PROJETA o conceito em vez de medi-lo — Focus / breakeven da curva implícita / degrau esperado do Copom. Separado de `measures` em 20/08/2026 porque as duas conviviam no mesmo verbo com source e shape e confidence IDÊNTICOS. Das 45 arestas do IPCA 41 eram projeção — quem atravessava a inflação medida recebia 41 previsões junto sem erro nenhum"
+    },
+    {
+      "rel": "holds",
+      "shape": "snapshot",
+      "max_gap_days": 45,
+      "domain_kinds": [
+        "fund"
+      ],
+      "range_kinds": [
+        "instrument",
+        "fund",
+        "equity_security"
+      ],
+      "note": "Posição em carteira declarada por competência — detentor detém INSTRUMENTO e nunca a emissora; company saiu do range em 17/08/2026 com zero arestas medidas em produção; fonte que só identifica o emissor vira exposed_to_issuer"
+    },
+    {
+      "rel": "indexed_to",
+      "shape": "event",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "instrument"
+      ],
+      "range_kinds": [
+        "indicator"
+      ],
+      "note": "Indexador contratado na emissão do papel — aponta para o CONCEITO (IPCA) e nunca para a série que o publica"
+    },
+    {
+      "rel": "issued",
+      "shape": "event",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "company",
+        "fund"
+      ],
+      "range_kinds": [
+        "instrument",
+        "equity_security",
+        "offering"
+      ],
+      "note": "Emissão do papel ou da OFERTA — aconteceu numa data e permanece fato histórico. O domínio inclui `fund` porque quem oferta cotas de FII/FIDC é o próprio fundo: 26.690 das 45.462 arestas de oferta saem de um fundo"
+    },
+    {
+      "rel": "manages",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "service_provider",
+        "company"
+      ],
+      "range_kinds": [
+        "fund"
+      ],
+      "note": "GESTOR (CPF_CNPJ_Gestor da CVM 175) — NÃO é o administrador fiduciário"
+    },
+    {
+      "rel": "measures",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "data_series"
+      ],
+      "range_kinds": [
+        "indicator",
+        "index"
+      ],
+      "note": "A série publicada MEDE o conceito OU o índice — bcb_sgs:433 mede o IPCA realizado e bcb_sgs:7 mede o IBOV. É declaração de vocabulário e não série temporal. NÃO inclui expectativa — para isso existe `forecasts`"
+    },
+    {
+      "rel": "member_of",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "instrument"
+      ],
+      "range_kinds": [
+        "instrument"
+      ],
+      "note": "O TÍTULO PERTENCE à família — \"Tesouro IPCA+ com Juros Semestrais 2035\" é membro do tipo NTN-B. `from` é o título porque `from` é sempre quem pratica a ação do verbo; a leitura natural \"os títulos desta família\" é a direção `in`. É relação ESTRUTURAL e não observação datada: um NTN-B 2035 nunca deixa de ser NTN-B, por isso `static` e sem competência. Nasceu em 24/08/2026 para o Tesouro Direto, quando o título ganhou identidade própria e a família (que era o único objeto) virou o nó agregador"
+    },
+    {
+      "rel": "mentions",
+      "shape": "event",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "market_event"
+      ],
+      "range_kinds": [
+        "company",
+        "equity_security",
+        "fund",
+        "instrument"
+      ],
+      "note": "O EVENTO CITA o objeto — `from` é o evento porque `from` é sempre quem pratica a ação do verbo; a leitura natural os eventos que falam da Petrobras é a direção `in`. A ponta do objeto é carimbada pelo DETECTOR na escrita e não casada por nome em tempo de consulta — o casamento por razão social truncada acertava 3 de 60. A CONFIANÇA cai com a cardinalidade e o corte é em 9: até 8 objetos citados é `high`; 9 ou mais é `low` e descreve matéria panorâmica que cita meia bolsa — 35 eventos produzem 640 das 2.071 arestas medidas em 22/08/2026. O número EXATO de citados viaja em `magnitude`; use-o para cortar mais fino que o binário do contrato"
+    },
+    {
+      "rel": "produces",
+      "shape": "snapshot",
+      "max_gap_days": 400,
+      "domain_kinds": [
+        "country"
+      ],
+      "range_kinds": [
+        "commodity"
+      ],
+      "note": "O PAÍS PRODUZ a commodity mineral, por ano de referência do USGS. `from` é o país porque `from` é sempre quem pratica a ação do verbo. NÃO liga empresa a produto: os produtores que a fonte publica são PAÍSES, e ligar Vale a minério de ferro por semelhança de nome seria o vínculo silencioso e errado de sempre — quando existir fonte que ligue companhia a produto, ela entra por aqui sem mudar o verbo. As duas linhas agregadas da fonte (`World total` e `Other countries`) ficam de fora: nenhuma das duas é um país. `magnitude` é a PARTICIPAÇÃO NO TOTAL MUNDIAL em pontos percentuais, não a quantidade: quantidade sai em toneladas, quilates ou quilos conforme a commodity e não se compara entre elas, enquanto a participação se compara sempre. Nula onde a própria fonte marca as bases como não somáveis (`incomparable_basis`: nas reservas de boro a Turquia declara borato refinado, o Chile ulexita e a China óxido bórico). Commodity com mais de um agregado (cobre tem produção de mina e de refino, com totais mundiais distintos) usa UM recorte só — o que mais países reportam —, e o país que só reporta o outro recorte mantém a aresta com magnitude nula: a relação é verdadeira mesmo quando o número não é comparável"
+    },
+    {
+      "rel": "rates",
+      "shape": "event",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "service_provider"
+      ],
+      "range_kinds": [
+        "instrument",
+        "fund",
+        "company"
+      ],
+      "note": "A AGÊNCIA AVALIA o papel ou o emissor — `from` é a agência porque `from` é sempre quem pratica a ação do verbo; a leitura natural este CRI é avaliado pela Fitch é a direção `in`. Fonte é o relatório da própria agência lido por LLM e NÃO o campo declarado no informe da CVM (texto livre com ~4% de nota legível; serve para conferir e não para publicar). `event` porque a ação de rating tem DATA e permanece fato histórico: rebaixamento de 2023 continua tendo acontecido depois de a nota subir em 2025"
+    },
+    {
+      "rel": "same_owner",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "company"
+      ],
+      "range_kinds": [
+        "company"
+      ],
+      "note": "Dois cedentes que compartilham sócio PJ — simétrica"
+    },
+    {
+      "rel": "shareholder_of",
+      "shape": "static",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "company",
+        "fund",
+        "service_provider"
+      ],
+      "range_kinds": [
+        "company"
+      ],
+      "note": "Sócio pessoa jurídica na Receita — participação societária SEM percentual nem qualificação"
+    },
+    {
+      "rel": "succeeded_by",
+      "shape": "event",
+      "max_gap_days": null,
+      "domain_kinds": [
+        "fund",
+        "company",
+        "equity_security"
+      ],
+      "range_kinds": [
+        "fund",
+        "company",
+        "equity_security"
+      ],
+      "note": "Sucessão societária real (incorporação/cisão) — não é renome de código"
+    }
+  ],
+  "facts": [
+    {
+      "name": "bank_basileia",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "quarterly",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "bank_capital_pr",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "bank_credit_portfolio",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "bank_equity",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "bank_net_income",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "quarterly",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": "net_income_quarterly",
+      "expected_range": null
+    },
+    {
+      "name": "bank_total_assets",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "bdr_sessions",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "beta",
+      "kind": "equity_security",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -5,
+        "max": 5
+      }
+    },
+    {
+      "name": "capex",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "cash",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "close",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "paper",
+      "concept": "close_price",
+      "expected_range": null
+    },
+    {
+      "name": "close",
+      "kind": "crypto_asset",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "close_price",
+      "expected_range": null
+    },
+    {
+      "name": "close",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "close_price",
+      "expected_range": null
+    },
+    {
+      "name": "close",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "close_price",
+      "expected_range": null
+    },
+    {
+      "name": "close",
+      "kind": "index",
+      "unit": "points",
+      "dimension": "index",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "close",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "close_price",
+      "expected_range": null
+    },
+    {
+      "name": "close_raw",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "close_raw",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "close_raw",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "close_raw",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "close_usd",
+      "kind": "crypto_asset",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "coe_additional_rate_pct",
+      "kind": "instrument",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "coe_indexer_pct",
+      "kind": "instrument",
+      "unit": "pct",
+      "dimension": "share",
+      "scale": "percent",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "coe_issue_price",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "coe_issue_size",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "coe_qty_issued",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "coe_trade_count",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "coe_trade_days",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "coe_volume",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "company_market_cap",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "crypto_rank",
+      "kind": "crypto_asset",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "current_assets",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "current_liabilities",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "curve_rate",
+      "kind": "data_series",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "daily_change_pct",
+      "kind": "index",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "deb_funds_holders",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "deb_funds_qty",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "deb_funds_value_brl",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "deb_net_traded_brl",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "div_liquida_ebitda",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "div_liquida_pl",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "dividend_per_share",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1000
+      }
+    },
+    {
+      "name": "dividend_per_share_net",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1000
+      }
+    },
+    {
+      "name": "dna",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "duration_bd",
+      "kind": "index",
+      "unit": "count",
+      "dimension": "duration",
+      "scale": "business_days",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "dy_12m",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "rate",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": "dividend_yield_12m",
+      "expected_range": {
+        "min": 0,
+        "max": 0.36
+      }
+    },
+    {
+      "name": "dy_12m",
+      "kind": "equity_security",
+      "unit": "ratio",
+      "dimension": "rate",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": "dividend_yield_12m",
+      "expected_range": {
+        "min": 0,
+        "max": 0.36
+      }
+    },
+    {
+      "name": "earnings_cagr_3y",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "rate",
+      "scale": "unit",
+      "period": "cagr_3y",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "ebit",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "ebitda",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "equity",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "etf_quota_count_authorized",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "etf_sessions",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "ev_ebit",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "ev_ebit",
+      "kind": "equity_security",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "ev_ebitda",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "ev_ebitda",
+      "kind": "equity_security",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "face_value_current",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "face_value_issue",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fcf",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fiagro_sessions",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_acquired_amount",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_acquired_impaired_pct",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_1080d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_120d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_150d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_180d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_30d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_360d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_60d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_720d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_90d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_aging_acima_1080d",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_allowance_ratio",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_amortizations",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_avg_ticket",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_buy_rate_avg",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "name": "fidc_collateral_pct",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "share",
+      "scale": "percent",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1000
+      }
+    },
+    {
+      "name": "fidc_impaired_ratio",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_investors",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": "holders_count",
+      "expected_range": null
+    },
+    {
+      "name": "fidc_liquid_30d",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_net_flow",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_net_worth",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": "net_worth",
+      "expected_range": null
+    },
+    {
+      "name": "fidc_overdue_ratio",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_portfolio",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_portfolio_to_net_worth",
+      "kind": "fund",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_redemption_coverage_30d",
+      "kind": "fund",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "name": "fidc_redemptions_paid",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_redemptions_requested",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_related_party_sale_pct",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_repurchase_to_portfolio",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_scr_alto_risco",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_scr_baixo_risco",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_sector_hhi",
+      "kind": "fund",
+      "unit": "points",
+      "dimension": "index",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 10000
+      }
+    },
+    {
+      "name": "fidc_segment_months_stable",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_subscriptions",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fidc_top_originator_pct",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "share",
+      "scale": "percent",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "name": "fidc_top_sector_share",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fidc_top_segment_share",
+      "kind": "fund",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1
+      }
+    },
+    {
+      "name": "fii_area_m2",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "area",
+      "scale": "square_meters",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fii_cap_rate",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 30
+      }
+    },
+    {
+      "name": "fii_distribution_per_share",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1000
+      }
+    },
+    {
+      "name": "fii_distribution_per_share_adj",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1000
+      }
+    },
+    {
+      "name": "fii_dividend_yield_month",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fii_dy_12m",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "ttm_12m",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": "dividend_yield_12m",
+      "expected_range": {
+        "min": 0,
+        "max": 36
+      }
+    },
+    {
+      "name": "fii_fee_effective_pct_aa",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 10
+      }
+    },
+    {
+      "name": "fii_fee_month_max_annualized",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fii_fee_months_observed",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fii_ffo_yield",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "ttm_12m",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 50
+      }
+    },
+    {
+      "name": "fii_net_asset_value",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": "net_worth",
+      "expected_range": null
+    },
+    {
+      "name": "fii_price_m2",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fii_properties",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fii_pvp",
+      "kind": "fund",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": "price_to_book",
+      "expected_range": {
+        "min": 0,
+        "max": 5
+      }
+    },
+    {
+      "name": "fii_rent_m2",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fii_shareholders",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": "holders_count",
+      "expected_range": null
+    },
+    {
+      "name": "fii_shares_issued",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "fii_vacancy",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "share",
+      "scale": "percent",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "name": "fii_value_per_share",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": "book_value_per_share",
+      "expected_range": null
+    },
+    {
+      "name": "focus_mean",
+      "kind": "data_series",
+      "unit": "native",
+      "dimension": null,
+      "scale": null,
+      "period": null,
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "focus_median",
+      "kind": "data_series",
+      "unit": "native",
+      "dimension": null,
+      "scale": null,
+      "period": null,
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "focus_respondents",
+      "kind": "data_series",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "focus_std_dev",
+      "kind": "data_series",
+      "unit": "native",
+      "dimension": null,
+      "scale": null,
+      "period": null,
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "funds_entered",
+      "kind": "equity_security",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "funds_exited",
+      "kind": "equity_security",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "funds_holders",
+      "kind": "equity_security",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "funds_panel_coverage_pct",
+      "kind": "equity_security",
+      "unit": "pct",
+      "dimension": "share",
+      "scale": "percent",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "funds_shares",
+      "kind": "equity_security",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "funds_value_brl",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "funds_value_flow_brl",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "funds_value_price_effect_brl",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "gross_debt",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "gross_profit",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "index_value",
+      "kind": "index",
+      "unit": "points",
+      "dimension": "index",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "indexer_pct",
+      "kind": "instrument",
+      "unit": "pct",
+      "dimension": "share",
+      "scale": "percent",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "indicator_value",
+      "kind": "data_series",
+      "unit": "native",
+      "dimension": null,
+      "scale": null,
+      "period": null,
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "insider_buy_value_brl",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "insider_net_shares",
+      "kind": "company",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "insider_net_value_brl",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "insider_net_value_brl",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "insider_sell_value_brl",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "monthly",
+      "cadence": "monthly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "invested_capital",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "jcp_per_share",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1000
+      }
+    },
+    {
+      "name": "liquidez_corrente",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "lpa",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "lpa",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "margem_bruta",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -3,
+        "max": 1.05
+      }
+    },
+    {
+      "name": "margem_ebit",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -10,
+        "max": 3
+      }
+    },
+    {
+      "name": "margem_liquida",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -10,
+        "max": 3
+      }
+    },
+    {
+      "name": "market_cap",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "market_cap",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "net_debt",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "net_flow",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "net_income",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "net_worth",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "net_worth",
+      "expected_range": null
+    },
+    {
+      "name": "nopat",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "ocf",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "offering_amount",
+      "kind": "offering",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 1000000000000
+      }
+    },
+    {
+      "name": "offering_quantity",
+      "kind": "offering",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "offering_unit_price",
+      "kind": "offering",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "otc_price_avg",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "otc_price_last",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "otc_price_max",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "otc_price_min",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "otc_quantity",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "otc_trade_count",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": "trade_count_daily",
+      "expected_range": null
+    },
+    {
+      "name": "otc_volume",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": "financial_volume_daily",
+      "expected_range": null
+    },
+    {
+      "name": "p_ebit",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "p_ebit",
+      "kind": "equity_security",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "payout",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 5
+      }
+    },
+    {
+      "name": "payout",
+      "kind": "equity_security",
+      "unit": "ratio",
+      "dimension": "share",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 5
+      }
+    },
+    {
+      "name": "pct_of_curve",
+      "kind": "instrument",
+      "unit": "pct",
+      "dimension": "share",
+      "scale": "percent",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 20,
+        "max": 200
+      }
+    },
+    {
+      "name": "pl",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "pl",
+      "kind": "equity_security",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "portfolio_value_kbrl",
+      "kind": "index",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "thousand",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "price_at_eval",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "price_at_eval",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "psr",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "psr",
+      "kind": "equity_security",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "pu_avg",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "pvp",
+      "kind": "company",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": "price_to_book",
+      "expected_range": null
+    },
+    {
+      "name": "pvp",
+      "kind": "equity_security",
+      "unit": "x",
+      "dimension": "ratio",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": "price_to_book",
+      "expected_range": null
+    },
+    {
+      "name": "qty_issued",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "qty_outstanding",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "quota",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "book_value_per_share",
+      "expected_range": null
+    },
+    {
+      "name": "quota_raw",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "retorno_12m",
+      "kind": "equity_security",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "ttm_12m",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -100,
+        "max": 1000
+      }
+    },
+    {
+      "name": "revenue",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "revenue_cagr_3y",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "rate",
+      "scale": "unit",
+      "period": "cagr_3y",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "roa",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "rate",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -3,
+        "max": 3
+      }
+    },
+    {
+      "name": "roe",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "rate",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -5,
+        "max": 5
+      }
+    },
+    {
+      "name": "roic",
+      "kind": "company",
+      "unit": "ratio",
+      "dimension": "rate",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -5,
+        "max": 5
+      }
+    },
+    {
+      "name": "shareholders",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "holders_count",
+      "expected_range": null
+    },
+    {
+      "name": "spread_median",
+      "kind": "data_series",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "spread_n_papers",
+      "kind": "data_series",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "spread_pct_aa",
+      "kind": "instrument",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "spread_pct_of_curve",
+      "kind": "data_series",
+      "unit": "pct",
+      "dimension": "share",
+      "scale": "percent",
+      "period": "none",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "spread_volume_brl",
+      "kind": "data_series",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "tesouro_buy_price",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "tesouro_buy_rate",
+      "kind": "instrument",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -2,
+        "max": 25
+      }
+    },
+    {
+      "name": "tesouro_sell_price",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "tesouro_sell_rate",
+      "kind": "instrument",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": -2,
+        "max": 25
+      }
+    },
+    {
+      "name": "total_assets",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "trade_count",
+      "kind": "equity_security",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "trade_count_daily",
+      "expected_range": null
+    },
+    {
+      "name": "trade_count",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": "trade_count_daily",
+      "expected_range": null
+    },
+    {
+      "name": "trade_price_last",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "trade_price_max",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "trade_price_min",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "trade_quantity",
+      "kind": "equity_security",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "trade_volume",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "financial_volume_daily",
+      "expected_range": null
+    },
+    {
+      "name": "trade_vwap",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "traded_quantity",
+      "kind": "instrument",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "trades",
+      "kind": "crypto_asset",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "trade_count_daily",
+      "expected_range": null
+    },
+    {
+      "name": "us_change_pct_1y",
+      "kind": "company",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "ttm_12m",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_change_pct_1y",
+      "kind": "fund",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "ttm_12m",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_close",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "close_price",
+      "expected_range": null
+    },
+    {
+      "name": "us_close",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "close_price",
+      "expected_range": null
+    },
+    {
+      "name": "us_eps_diluted_fy",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "annual",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_eps_diluted_fy",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "annual",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_eps_diluted_q",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "quarterly",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_eps_diluted_q",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "quarterly",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_high_52w",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_high_52w",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_low_52w",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_low_52w",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "ttm_12m",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_net_income_fy",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "annual",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_net_income_fy",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "annual",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_net_income_q",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "quarterly",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": "net_income_quarterly",
+      "expected_range": null
+    },
+    {
+      "name": "us_net_income_q",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "quarterly",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": "net_income_quarterly",
+      "expected_range": null
+    },
+    {
+      "name": "us_revenue_fy",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "annual",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_revenue_fy",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "annual",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_revenue_q",
+      "kind": "company",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "quarterly",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_revenue_q",
+      "kind": "fund",
+      "unit": "usd",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "quarterly",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_volume",
+      "kind": "company",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "us_volume",
+      "kind": "fund",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "value",
+      "kind": "data_series",
+      "unit": "native",
+      "dimension": null,
+      "scale": null,
+      "period": null,
+      "cadence": "irregular",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "volatilidade",
+      "kind": "equity_security",
+      "unit": "pct",
+      "dimension": "rate",
+      "scale": "percent",
+      "period": "annual",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": {
+        "min": 0,
+        "max": 300
+      }
+    },
+    {
+      "name": "volume",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "paper",
+      "concept": "financial_volume_daily",
+      "expected_range": null
+    },
+    {
+      "name": "volume",
+      "kind": "crypto_asset",
+      "unit": "count",
+      "dimension": "count",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "volume",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "financial_volume_daily",
+      "expected_range": null
+    },
+    {
+      "name": "volume",
+      "kind": "fund",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "financial_volume_daily",
+      "expected_range": null
+    },
+    {
+      "name": "volume",
+      "kind": "instrument",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": "financial_volume_daily",
+      "expected_range": null
+    },
+    {
+      "name": "volume_medio_2m",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "daily",
+      "cadence": "daily",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    },
+    {
+      "name": "vpa",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "paper",
+      "concept": "book_value_per_share",
+      "expected_range": null
+    },
+    {
+      "name": "vpa",
+      "kind": "equity_security",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": "book_value_per_share",
+      "expected_range": null
+    },
+    {
+      "name": "working_capital",
+      "kind": "company",
+      "unit": "brl",
+      "dimension": "currency",
+      "scale": "unit",
+      "period": "none",
+      "cadence": "quarterly",
+      "grain": "object",
+      "concept": null,
+      "expected_range": null
+    }
+  ],
+  "properties": [
+    {
+      "name": "sector",
+      "kind": "company",
+      "source": "Cadastro de companhias abertas (CVM)",
+      "description": "Setor de atuação classificado pela CVM. São 70 valores vivos, por isso sem vocabulário declarado — lista congelada aqui ficaria errada na primeira revisão da CVM.",
+      "vocabulary": null
+    },
+    {
+      "name": "status",
+      "kind": "company",
+      "source": "Cadastro de companhias abertas (CVM)",
+      "description": "Situação do REGISTRO da companhia na CVM. Não diz nada sobre pregão: companhia com status ATIVO pode ter todos os papéis parados há anos.",
+      "vocabulary": [
+        "ATIVO",
+        "CANCELADA",
+        "SUSPENSO(A) - DECISÃO ADM"
+      ]
+    },
+    {
+      "name": "issuer_status",
+      "kind": "company",
+      "source": "Cadastro de companhias abertas (CVM)",
+      "description": "Situação OPERACIONAL do emissor — é aqui que recuperação judicial e falência aparecem, e não em `status`. Confundir os dois é ler uma empresa falida como ativa.",
+      "vocabulary": [
+        "FASE OPERACIONAL",
+        "FASE PRÉ-OPERACIONAL",
+        "EM RECUPERAÇÃO JUDICIAL OU EQUIVALENTE",
+        "EM RECUPERAÇÃO EXTRAJUDICIAL",
+        "EM LIQUIDAÇÃO JUDICIAL",
+        "LIQUIDAÇÃO EXTRAJUDICIAL",
+        "FALIDA",
+        "PARALISADA"
+      ]
+    },
+    {
+      "name": "ownership_control",
+      "kind": "company",
+      "source": "Cadastro de companhias abertas (CVM)",
+      "description": "Natureza do controle acionário declarada à CVM. É a CLASSIFICAÇÃO da fonte, não uma apuração de quem controla — para isso existem as arestas do grafo.",
+      "vocabulary": [
+        "PRIVADO",
+        "PRIVADO HOLDING",
+        "ESTATAL",
+        "ESTATAL HOLDING",
+        "ESTRANGEIRO",
+        "ESTRANGEIRO HOLDING"
+      ]
+    },
+    {
+      "name": "listing_segment",
+      "kind": "company",
+      "source": "Cadastro de companhias abertas (CVM)",
+      "description": "Segmento de listagem na B3, do Básico ao Novo Mercado. É exigência de governança, não tamanho nem liquidez.",
+      "vocabulary": [
+        "Básico",
+        "Bovespa Mais",
+        "Nível 1 de Governança Corporativa",
+        "Nível 2 de Governança Corporativa",
+        "Novo Mercado"
+      ]
+    },
+    {
+      "name": "registration_category",
+      "kind": "company",
+      "source": "Cadastro de companhias abertas (CVM)",
+      "description": "Categoria A pode ter ação listada; Categoria B só emite dívida. Explica companhia aberta sem papel nenhum, que não é erro de dado.",
+      "vocabulary": [
+        "Categoria A",
+        "Categoria B"
+      ]
+    },
+    {
+      "name": "has_active_ticker",
+      "kind": "company",
+      "source": "Cadastro de companhias abertas (CVM)",
+      "description": "Tem ao menos um papel negociando hoje. `false` junto de `status: ATIVO` é o caso comum de companhia registrada e não listada — as duas coisas são verdadeiras ao mesmo tempo.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "us_filings_count",
+      "kind": "company",
+      "source": "SEC EDGAR (acervo de filings)",
+      "description": "Quantos filings a SEC tem deste papel no acervo. É o tamanho da ficha, não do histórico da empresa — o acervo começa em `us_filings_since`.",
+      "vocabulary": null
+    },
+    {
+      "name": "us_filings_since",
+      "kind": "company",
+      "source": "SEC EDGAR (acervo de filings)",
+      "description": "Desde quando há filing no acervo. Cobertura da FONTE, não idade da companhia.",
+      "vocabulary": null
+    },
+    {
+      "name": "us_last_filing_at",
+      "kind": "company",
+      "source": "SEC EDGAR (acervo de filings)",
+      "description": "Data do filing mais recente, de qualquer formulário. É o frescor do acervo.",
+      "vocabulary": null
+    },
+    {
+      "name": "us_last_annual_report_at",
+      "kind": "company",
+      "source": "SEC EDGAR (acervo de filings)",
+      "description": "Último relatório ANUAL: 10-K (e emenda) para a companhia americana, 20-F para a estrangeira listada nos EUA. Mais de um ano atrás com `us_last_filing_at` recente = a empresa protocola por outro formulário — leia `listUsFilings`.",
+      "vocabulary": null
+    },
+    {
+      "name": "us_last_quarterly_report_at",
+      "kind": "company",
+      "source": "SEC EDGAR (acervo de filings)",
+      "description": "Último relatório TRIMESTRAL (10-Q e emenda). Emissor estrangeiro não entrega 10-Q — ausência aqui com acervo vivo não é atraso.",
+      "vocabulary": null
+    },
+    {
+      "name": "us_last_current_report_at",
+      "kind": "company",
+      "source": "SEC EDGAR (acervo de filings)",
+      "description": "Último fato relevante (8-K, ou 6-K do emissor estrangeiro) — o formulário de evento, não o periódico.",
+      "vocabulary": null
+    },
+    {
+      "name": "trading_status",
+      "kind": "equity_security",
+      "source": "CODBDI do pregão (B3, COTAHIST)",
+      "description": "Situação EXCEPCIONAL da emissora, carimbada neste papel pela B3 no CODBDI do pregão. NÃO é suspensão: a maioria segue negociando todo dia. A propriedade só existe quando há exceção — papel em operação regular não tem esta folha, e a ausência É a resposta. É da COMPANHIA, carimbada no papel: atravesse `issued` para chegar à emissora.",
+      "vocabulary": [
+        "sancionada",
+        "concordataria",
+        "recuperacao_extrajudicial",
+        "recuperacao_judicial"
+      ]
+    },
+    {
+      "name": "trading_status_since",
+      "kind": "equity_security",
+      "source": "CODBDI do pregão (B3, COTAHIST)",
+      "description": "Início do PERÍODO ATUAL da situação, não a primeira ocorrência dela: quem entra, sai e reentra em recuperação reporta a data da reentrada. Derivado de ilhas de pregões contíguos com o mesmo carimbo.",
+      "vocabulary": null
+    },
+    {
+      "name": "fund_type",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "A sigla do tipo: FIF, FIDC, FII, FIP, FIAGRO. É o mesmo eixo que `subkind` publica no objeto, e serve para conferir um contra o outro.",
+      "vocabulary": null
+    },
+    {
+      "name": "class_type",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "O tipo por extenso, como a RCVM 175 nomeia a CLASSE de cotas — 'Classes de Cotas de Fundos FIDC' e afins.",
+      "vocabulary": null
+    },
+    {
+      "name": "situation",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "Situação do registro. NENHUM dos valores é 'Encerrado' — referência de mercado que exibe isso está derivando de outro lugar, não da CVM.",
+      "vocabulary": [
+        "Em Funcionamento Normal",
+        "Fase Pré-Operacional",
+        "Em Liquidação",
+        "Em Análise",
+        "Cancelado"
+      ]
+    },
+    {
+      "name": "classification",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "Classificação CVM por fator de risco predominante. É grossa de propósito; para o corte fino existe a da ANBIMA, ao lado.",
+      "vocabulary": [
+        "Ações",
+        "Cambial",
+        "FMP-FGTS",
+        "Multimercado",
+        "Renda Fixa"
+      ]
+    },
+    {
+      "name": "anbima_classification",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "Classificação ANBIMA, bem mais fina que a da CVM: 66 valores vivos, por isso sem vocabulário declarado aqui.",
+      "vocabulary": null
+    },
+    {
+      "name": "condominium_type",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "Aberto aceita resgate; fechado só sai vendendo a cota. Muda o que 'liquidez' significa para este fundo, e é a primeira coisa a olhar antes de comparar retorno.",
+      "vocabulary": [
+        "Aberto",
+        "Fechado"
+      ]
+    },
+    {
+      "name": "target_investor",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "Público-alvo regulatório. 'Profissional' e 'Qualificado' têm barreira de entrada LEGAL — não é preferência comercial nem sugestão.",
+      "vocabulary": [
+        "Público Geral",
+        "Qualificado",
+        "Profissional"
+      ]
+    },
+    {
+      "name": "is_exclusive",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "Fundo exclusivo, de um único cotista. Era `S`/`N` da CVM até 20/08/2026; a normalização foi para o mart, e não para esta rota, para que `getFund` e as propriedades nunca discordem sobre a mesma coluna.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "is_investment_entity",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "Entidade de investimento na acepção contábil (CPC 18/IFRS 10), o que muda como as participadas são avaliadas. Nulo é ausência de declaração na fonte, nunca `false`.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "fee_source",
+      "kind": "fund",
+      "source": "Cadastro de fundos (CVM, RCVM 175)",
+      "description": "De ONDE veio a taxa de administração servida: `extrato` é a fonte viva, `cad_fi_legado` é o cadastro antigo. Não é atributo do fundo — é procedência do número, e está aqui para quem compara taxas saber o que está comparando.",
+      "vocabulary": [
+        "extrato",
+        "cad_fi_legado"
+      ]
+    },
+    {
+      "name": "fii_segment",
+      "kind": "fund",
+      "source": "Cadastro de FII (B3 + CVM)",
+      "description": "Segmento imobiliário do FII — logística, shoppings, lajes, papel, híbrido. É o primeiro corte de qualquer triagem de FII e não existe no registro da CVM, que descreve o veículo e não o que ele possui.",
+      "vocabulary": null
+    },
+    {
+      "name": "fii_is_paper",
+      "kind": "fund",
+      "source": "Cadastro de FII (B3 + CVM)",
+      "description": "Se o fundo é de PAPEL (carteira de CRI e recebível) em vez de TIJOLO (imóvel físico). Muda o que significa vacância, cap rate e P/VP: fundo de papel não tem imóvel, e comparar os dois pelos mesmos indicadores compara coisas diferentes. Nulo em 30 dos 546 — a fonte não classificou.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "etf_segment",
+      "kind": "fund",
+      "source": "Cadastro de ETF (B3)",
+      "description": "Segmento do ETF conforme a B3 — o índice ou a classe de ativo que ele replica. Prefixado porque o cadastro de FII publica um `segment` próprio, com vocabulário diferente.",
+      "vocabulary": null
+    },
+    {
+      "name": "etf_trading_code_others",
+      "kind": "fund",
+      "source": "Cadastro de ETF (B3)",
+      "description": "Outros códigos de negociação do mesmo ETF. Existe porque um ETF pode negociar sob mais de um código, e quem casa por ticker precisa saber disso antes de concluir que são fundos diferentes.",
+      "vocabulary": null
+    },
+    {
+      "name": "etf_first_traded",
+      "kind": "fund",
+      "source": "Cadastro de ETF (B3)",
+      "description": "Primeiro pregão observado. É início de OBSERVAÇÃO e não de existência: ETF anterior à janela do lake aparece com data mais recente que a real.",
+      "vocabulary": null
+    },
+    {
+      "name": "etf_last_traded",
+      "kind": "fund",
+      "source": "Cadastro de ETF (B3)",
+      "description": "Último pregão observado. Distância grande para hoje indica ETF que parou de negociar, não ausência de dado.",
+      "vocabulary": null
+    },
+    {
+      "name": "fiagro_first_traded",
+      "kind": "fund",
+      "source": "Cadastro de FIAGRO (B3 + CVM)",
+      "description": "Primeiro pregão observado do FIAGRO na série.",
+      "vocabulary": null
+    },
+    {
+      "name": "fiagro_last_traded",
+      "kind": "fund",
+      "source": "Cadastro de FIAGRO (B3 + CVM)",
+      "description": "Último pregão observado do FIAGRO. Distância grande para hoje indica papel que parou de negociar, e num universo de 46 fundos isso é a maior parte da triagem.",
+      "vocabulary": null
+    },
+    {
+      "name": "registration_category",
+      "kind": "service_provider",
+      "source": "Cadastro de administradores de carteira (CVM, ADM_CART)",
+      "description": "O que a casa PODE fazer perante a CVM — não o que ela faz. 'Administrador Fiduciário' puro administra o fundo sem gerir a carteira; a diferença decide quem responde por quê.",
+      "vocabulary": [
+        "Gestor de Carteira",
+        "Administrador Fiduciário",
+        "Administrador Fiduciário e Gestor de Carteira"
+      ]
+    },
+    {
+      "name": "registration_subcategory",
+      "kind": "service_provider",
+      "source": "Cadastro de administradores de carteira (CVM, ADM_CART)",
+      "description": "Sob que regime de capital a casa se registrou. 'Instituição Financeira' é banco ou DTVM; 'Capital Mínimo' é a gestora independente.",
+      "vocabulary": [
+        "Capital Mínimo",
+        "Fundos Especiais",
+        "Instituição Financeira"
+      ]
+    },
+    {
+      "name": "situation",
+      "kind": "service_provider",
+      "source": "Cadastro de administradores de carteira (CVM, ADM_CART)",
+      "description": "Situação do registro na CVM. 'AFASTADO - TERMO DE COMPROMISSO' e 'SUSPENSO(A)' são estados de sanção, e nenhum dos dois é cancelamento.",
+      "vocabulary": [
+        "EM FUNCIONAMENTO NORMAL",
+        "CANCELADA",
+        "SUSPENSO(A) - DECISÃO ADM",
+        "AFASTADO - TERMO DE COMPROMISSO",
+        "LIQUIDAÇÃO EXTRAJUDICIAL"
+      ]
+    },
+    {
+      "name": "is_active",
+      "kind": "service_provider",
+      "source": "Cadastro de administradores de carteira (CVM, ADM_CART)",
+      "description": "Derivada de `situation`: verdadeira só em 'EM FUNCIONAMENTO NORMAL'. Os outros quatro estados são diferentes entre si — leia `situation` para separá-los.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "manages_portfolios",
+      "kind": "service_provider",
+      "source": "Cadastro de administradores de carteira (CVM, ADM_CART)",
+      "description": "A casa gere carteira de terceiros. Falso com registro ativo é o administrador fiduciário puro, que existe e não decide alocação — confundir os dois atribui decisão a quem não a toma.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "ownership_control",
+      "kind": "service_provider",
+      "source": "Cadastro de administradores de carteira (CVM, ADM_CART)",
+      "description": "Natureza do controle declarada à CVM. É classificação da FONTE, não apuração de quem controla — para isso existem as arestas do grafo.",
+      "vocabulary": [
+        "PRIVADO",
+        "PRIVADO HOLDING",
+        "ESTATAL"
+      ]
+    },
+    {
+      "name": "state",
+      "kind": "service_provider",
+      "source": "Cadastro de administradores de carteira (CVM, ADM_CART)",
+      "description": "UF da sede declarada. Concentração geográfica de gestoras é informação de mercado, não detalhe cadastral.",
+      "vocabulary": null
+    },
+    {
+      "name": "advisor_situation",
+      "kind": "service_provider",
+      "source": "Cadastro de assessores de investimento (CVM, AGENTE_AUTON)",
+      "description": "Situação do registro de ASSESSOR na CVM. Vocabulário próprio, diferente do da gestora: no acervo PJ só existem os dois estados — 1.421 em funcionamento e 3.323 canceladas, e o cancelado é histórico legítimo, não lixo.",
+      "vocabulary": [
+        "EM FUNCIONAMENTO NORMAL",
+        "CANCELADA"
+      ]
+    },
+    {
+      "name": "advisor_registered_at",
+      "kind": "service_provider",
+      "source": "Cadastro de assessores de investimento (CVM, AGENTE_AUTON)",
+      "description": "Data do registro na CVM. Idade de registro é o único proxy de experiência que o cadastro público oferece.",
+      "vocabulary": null
+    },
+    {
+      "name": "advisor_canceled_at",
+      "kind": "service_provider",
+      "source": "Cadastro de assessores de investimento (CVM, AGENTE_AUTON)",
+      "description": "Data do cancelamento, quando houve. Junto de `advisor_situation`, separa o ativo do histórico sem adivinhar.",
+      "vocabulary": null
+    },
+    {
+      "name": "advisor_city",
+      "kind": "service_provider",
+      "source": "Cadastro de assessores de investimento (CVM, AGENTE_AUTON)",
+      "description": "Município da sede declarada. Com `advisor_state`, é o eixo geográfico do censo de assessorias.",
+      "vocabulary": null
+    },
+    {
+      "name": "advisor_state",
+      "kind": "service_provider",
+      "source": "Cadastro de assessores de investimento (CVM, AGENTE_AUTON)",
+      "description": "UF da sede declarada à CVM. Concentração geográfica de assessorias é informação de mercado, não detalhe cadastral.",
+      "vocabulary": null
+    },
+    {
+      "name": "situation",
+      "kind": "fund_share_class",
+      "source": "Registro de subclasses (CVM, RCVM 175)",
+      "description": "Situação do registro da SUBCLASSE, que pode diferir da classe-mãe: subclasse em liquidação dentro de classe em funcionamento é caso normal.",
+      "vocabulary": [
+        "Em Funcionamento Normal",
+        "Fase Pré-Operacional",
+        "Em Liquidação",
+        "Em Análise",
+        "Cancelado"
+      ]
+    },
+    {
+      "name": "is_operating",
+      "kind": "fund_share_class",
+      "source": "Registro de subclasses (CVM, RCVM 175)",
+      "description": "Derivada de `situation`: verdadeira só em 'Em Funcionamento Normal'. Os outros quatro estados são diferentes entre si — leia `situation` para separá-los, porque o booleano os colapsa.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "condominium_type",
+      "kind": "fund_share_class",
+      "source": "Registro de subclasses (CVM, RCVM 175)",
+      "description": "Aberto aceita resgate; fechado só sai vendendo a cota. Muda o que liquidez significa para esta subclasse, e 7.085 das 9.119 são fechadas.",
+      "vocabulary": [
+        "Aberto",
+        "Fechado"
+      ]
+    },
+    {
+      "name": "target_investor",
+      "kind": "fund_share_class",
+      "source": "Registro de subclasses (CVM, RCVM 175)",
+      "description": "Público-alvo regulatório desta subclasse. É onde a estrutura sênior/subordinada costuma se separar do varejo, com barreira legal e não comercial.",
+      "vocabulary": [
+        "Público Geral",
+        "Qualificado",
+        "Profissional"
+      ]
+    },
+    {
+      "name": "is_exclusive",
+      "kind": "fund_share_class",
+      "source": "Registro de subclasses (CVM, RCVM 175)",
+      "description": "Subclasse exclusiva, de um único cotista. Nulo é ausência de declaração na fonte, nunca 'não é exclusiva' — por isso a linha some em vez de vir falsa.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "is_pension",
+      "kind": "fund_share_class",
+      "source": "Registro de subclasses (CVM, RCVM 175)",
+      "description": "Subclasse previdenciária. 475 das 9.119 não declaram, e nulo não é 'não é previdenciária' — a linha some em vez de afirmar o que a fonte não disse.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "parent_class_name",
+      "kind": "fund_share_class",
+      "source": "Registro de subclasses (CVM, RCVM 175)",
+      "description": "O nome da CLASSE-mãe como o registro a chama. Atenção: o nome comercial da subclasse NÃO casa com o rótulo do informe mensal — o registro diz 'SEN 2' e o informe diz 'Subclasse Sênior Série 2'. As duas listas viajam lado a lado de propósito; casá-las por similaridade produziria vínculo errado em silêncio.",
+      "vocabulary": null
+    },
+    {
+      "name": "indexer",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "O indexador CONTRATADO na emissão. `DI` e `PRÉ` não são a mesma família de risco que `IPCA`: o primeiro acompanha juro nominal e o segundo carrega inflação. `SEM-ÍNDICE` é declaração da fonte, não ausência de dado.",
+      "vocabulary": [
+        "DI",
+        "IPCA",
+        "IGP-M",
+        "SEM-ÍNDICE",
+        "TR",
+        "PRÉ",
+        "ANBID",
+        "INPC",
+        "TJLP",
+        "DOLAR",
+        "IGP-DI",
+        "TR-REAL",
+        "US$ COMERCIAL",
+        "PREFIXADO",
+        "PÓS",
+        "BTN",
+        "IPC-R",
+        "IPC-M",
+        "UFIR",
+        "TBF",
+        "SELIC",
+        "EURO",
+        "FDS",
+        "IPC-FIPE"
+      ]
+    },
+    {
+      "name": "guarantee_type",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Espécie da garantia. `Quirografária` é SEM garantia real e é a maioria (5.819 de 9.887); `Subordinada` fica atrás dos demais credores na ordem de pagamento. Não é nota de risco — é posição na fila.",
+      "vocabulary": [
+        "Quirografária",
+        "Real",
+        "Subordinada",
+        "Flutuante"
+      ]
+    },
+    {
+      "name": "debenture_class",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Conversibilidade em ação. `-` é como a fonte publica quando não declara, e viaja sem tradução.",
+      "vocabulary": [
+        "Simples",
+        "Conversível",
+        "Permutável",
+        "-",
+        "Não Conversível Permutável"
+      ]
+    },
+    {
+      "name": "situation",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Situação no registro. `Excluído` são 5.148 de 9.887 e significa papel que saiu do sistema (vencido, resgatado), não erro de cadastro — a maioria da base é histórico, e uma triagem que não filtre isto mistura papel vivo com papel morto.",
+      "vocabulary": [
+        "Excluído",
+        "Registrado"
+      ]
+    },
+    {
+      "name": "registration_regime",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Rito pelo qual a emissão chegou ao mercado. `dispensa_icvm_476` (esforços restritos) é o maior grupo e é DISPENSADO de registro ordinário — por isso emissor sem registro CVM não é anomalia.",
+      "vocabulary": [
+        "dispensa_icvm_476",
+        "rito_automatico_rcvm_160",
+        "registro_ordinario",
+        "dispensa_outra",
+        "pendente",
+        "outro"
+      ]
+    },
+    {
+      "name": "is_incentivada",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Se é incentivada (Lei 12.431), com isenção de IR para pessoa física. 1.411 de 9.887. Muda o retorno LÍQUIDO sem mudar a taxa contratada, então comparar taxa bruta entre incentivada e comum compara coisas diferentes.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "is_active",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Se o papel está ativo no registro. Ler junto com `situation`: as duas vêm da fonte e respondem perguntas próximas, mas não idênticas.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "maturity_date",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Vencimento COMO ARQUIVADO. Pode ser sentinela — ver `maturity_is_sentinel`. É texto: para cortar por prazo use data, não comparação de string, e o corte numérico por prazo remanescente ainda não existe como medida.",
+      "vocabulary": null
+    },
+    {
+      "name": "effective_maturity_date",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Vencimento EFETIVO, já resolvida a sentinela. É este que deve entrar em conta de prazo; `maturity_date` fica para auditoria contra a fonte.",
+      "vocabulary": null
+    },
+    {
+      "name": "maturity_is_sentinel",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Se o vencimento arquivado é valor-sentinela (ano ≥ 2090) e não data real. São 55 papéis. Sem esta flag, eles entram em bucket de prazo longuíssimo e distorcem qualquer curva.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "spread_absent_reason",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Por que `spread_pct_aa` está ausente. Existe em 17,7% dos papéis, e 82,3% + 17,7% = 100%: não há buraco na base, há ausência DECLARADA. `spread_pct_aa = 0` nunca é omissão.",
+      "vocabulary": [
+        "not_filed",
+        "filed_zero_unverifiable",
+        "no_index_no_rate",
+        "unparseable_legacy"
+      ]
+    },
+    {
+      "name": "issuer_match_level",
+      "kind": "instrument",
+      "source": "SND/ANBIMA + registro CVM",
+      "description": "Como o emissor foi casado com o registro da CVM. `none_issuer_not_in_cvm_registry` NÃO é falha nossa: emissão por esforços restritos dispensa registro, e o emissor legitimamente não está lá.",
+      "vocabulary": [
+        "exact",
+        "none_issuer_not_in_cvm_registry",
+        "none_cnpj_root_only"
+      ]
+    },
+    {
+      "name": "bdr_kind",
+      "kind": "instrument",
+      "source": "Cadastro B3",
+      "description": "Tipo do programa. `nao_patrocinado` é emitido pela depositária SEM acordo com a companhia estrangeira e é a maioria (878 de 1.194); `patrocinado` tem acordo (21); `etf` é BDR de fundo de índice (295), e aí o lastro é uma carteira, não uma empresa.",
+      "vocabulary": [
+        "nao_patrocinado",
+        "etf",
+        "patrocinado"
+      ]
+    },
+    {
+      "name": "bdr_spec",
+      "kind": "instrument",
+      "source": "Cadastro B3",
+      "description": "Especificação do papel como a B3 publica. `ED` e `EB` no sufixo marcam situações de negociação, não classe — e por isso a sigla viaja inteira, sem ser partida em campos que a fonte não separa.",
+      "vocabulary": [
+        "DRN",
+        "DRE",
+        "DRN ED",
+        "DRE ED",
+        "DR1",
+        "DRN EB",
+        "DR3",
+        "DR2",
+        "DRN EDB",
+        "UNT",
+        "DRN A",
+        "DIR",
+        "DRN C"
+      ]
+    },
+    {
+      "name": "first_traded",
+      "kind": "instrument",
+      "source": "Cadastro B3",
+      "description": "Primeiro pregão observado do papel na nossa série. É início de OBSERVAÇÃO, não de existência: papel anterior à janela do lake aparece com data mais recente do que a real.",
+      "vocabulary": null
+    },
+    {
+      "name": "last_traded",
+      "kind": "instrument",
+      "source": "Cadastro B3",
+      "description": "Último pregão observado. Distância grande para hoje indica papel que parou de negociar, não ausência de dado.",
+      "vocabulary": null
+    },
+    {
+      "name": "coe_indexer",
+      "kind": "instrument",
+      "source": "BDI InstrumentRegistration (B3)",
+      "description": "Indexador DE REGISTRO da emissão — NÃO é o retorno do investidor. O COE é estruturado e o que se recebe depende de barreira e cenário, que a fonte não publica. `SEM REMUNERACAO` e `NO PERIODO` são rótulos do formulário, não promessa de zero.",
+      "vocabulary": [
+        "NO PERIODO",
+        "SEM REMUNERACAO",
+        "IPCA VCP",
+        "PRE",
+        "DI"
+      ]
+    },
+    {
+      "name": "coe_issue_type",
+      "kind": "instrument",
+      "source": "BDI InstrumentRegistration (B3)",
+      "description": "Modalidade da oferta no registro. Nos 957 COEs com objeto hoje, todos vêm `PUBLICA` — mas isso é o que a janela observada mostra, não um vocabulário fechado da fonte.",
+      "vocabulary": null
+    },
+    {
+      "name": "coe_is_incentivada",
+      "kind": "instrument",
+      "source": "BDI InstrumentRegistration (B3)",
+      "description": "Se o registro marca incentivo fiscal. Campo de REGISTRO: confirme no documento da emissão antes de concluir isenção.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "coe_maturity_date",
+      "kind": "instrument",
+      "source": "BDI InstrumentRegistration (B3)",
+      "description": "Vencimento no registro da emissão. Prefixado porque `maturity_date` já existe na ficha da debênture e as duas abrem pela mesma chave.",
+      "vocabulary": null
+    },
+    {
+      "name": "coe_last_trade_date",
+      "kind": "instrument",
+      "source": "BDI InstrumentRegistration (B3)",
+      "description": "Último pregão com negócio no balcão. Nulo significa registrado e nunca negociado — que é o caso comum em COE, não anomalia.",
+      "vocabulary": null
+    },
+    {
+      "name": "family",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "A família CANÔNICA do que está sendo ofertado — o mesmo eixo que `subkind` publica no objeto. É por aqui que se filtra, não por `asset_type_as_filed`.",
+      "vocabulary": [
+        "fundo",
+        "divida",
+        "securitizacao",
+        "equity",
+        "outro"
+      ]
+    },
+    {
+      "name": "instrument",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "O instrumento canônico, um nível mais fino que a família — também derivado, também seguro para filtrar.",
+      "vocabulary": null
+    },
+    {
+      "name": "asset_type_as_filed",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "O tipo do ativo COMO A FONTE ESCREVEU. Está aqui por procedência, não para filtrar: são 60 grafias para ~28 instrumentos, porque cada regime usa um vocabulário. Filtrar por ele devolvia 1.841 de 2.801 debêntures — 34% de perda silenciosa. Use `family` ou `instrument`.",
+      "vocabulary": null
+    },
+    {
+      "name": "offering_type",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "Primária (dinheiro novo para o emissor), secundária (venda de quem já tinha) ou mista. Muda QUEM recebe o volume, que é a diferença entre a empresa capitalizar e um sócio sair.",
+      "vocabulary": null
+    },
+    {
+      "name": "rite",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "Rito de registro. Automático e ordinário têm exigências e prazos diferentes, e isso explica ofertas de mesmo tamanho com histórias regulatórias distintas.",
+      "vocabulary": null
+    },
+    {
+      "name": "regime",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "O regime regulatório sob o qual a oferta foi registrada — é o que separa o acervo ICVM 476 do resto, e o 476 não tem data de registro.",
+      "vocabulary": null
+    },
+    {
+      "name": "status",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "Situação da oferta. REGISTRADA NÃO É DISTRIBUÍDA: o volume servido é o pretendido no registro, não o efetivamente colocado — somar registros e chamar de captação do ano é o erro comum aqui.",
+      "vocabulary": null
+    },
+    {
+      "name": "registration_modality",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "Modalidade do registro na CVM. Junto de `registration_regime`, descreve por qual porta a oferta entrou.",
+      "vocabulary": null
+    },
+    {
+      "name": "registration_regime",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "Regime do registro — dispensa, análise prévia e afins. É atributo do PROCESSO, não do papel ofertado.",
+      "vocabulary": null
+    },
+    {
+      "name": "series",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "A série dentro da emissão, e ela é parte do GRÃO: uma emissão com três séries são três ofertas aqui, com volumes diferentes. Somá-las sem perceber conta a mesma emissão três vezes.",
+      "vocabulary": null
+    },
+    {
+      "name": "issue",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "O número da emissão do emissor. Emissão alta com séries curtas é emissor recorrente, e isso é informação sobre o emissor, não sobre esta oferta.",
+      "vocabulary": null
+    },
+    {
+      "name": "tax_incentive",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "Papel incentivado (Lei 12.431 e afins). Muda a comparação de taxa: incentivado rende líquido de IR para pessoa física, então comparar a taxa crua com a de um papel comum favorece o comum sem motivo.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "value_is_sentinel",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "O volume declarado é lixo da fonte — três registros vêm preenchidos com noves, até R$ 100 tri. A flag NÃO altera o valor servido; existe para você poder excluí-lo ao agregar.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "value_pre_real_currency",
+      "kind": "offering",
+      "source": "Ofertas públicas (CVM)",
+      "description": "O volume está em moeda ANTERIOR ao Plano Real e nunca foi convertido — 693 ofertas. Somá-lo com o resto produz um total sem significado nenhum.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "dimension",
+      "kind": "data_series",
+      "source": "Catálogo de séries",
+      "description": "O que o número É. Sem isto o `unit` da fonte não decide nada — no World Bank ele traz o NOME do indicador em 113 de 185 séries.",
+      "vocabulary": [
+        "rate",
+        "index",
+        "currency",
+        "count",
+        "share",
+        "points",
+        "ratio"
+      ]
+    },
+    {
+      "name": "scale",
+      "kind": "data_series",
+      "source": "Catálogo de séries",
+      "description": "Em que escala o número vem. É o eixo que separa 4,44 de 0,0444 para a MESMA inflação, e ler errado erra por 100× sem nada acusar.",
+      "vocabulary": [
+        "unit",
+        "thousand",
+        "million",
+        "billion",
+        "percent",
+        "bps"
+      ]
+    },
+    {
+      "name": "period",
+      "kind": "data_series",
+      "source": "Catálogo de séries",
+      "description": "Que JANELA o número cobre, e NÃO é a frequência de publicação. A TR é publicada todo dia e o número é DO MÊS. É a diferença entre o IPCA do mês (bcb_sgs:433) e o acumulado em 12 meses (bcb_sgs:13522), que é o erro macro mais caro que existe.",
+      "vocabulary": [
+        "none",
+        "daily",
+        "monthly",
+        "quarterly",
+        "annual",
+        "ttm_12m"
+      ]
+    },
+    {
+      "name": "seasonal_adjustment",
+      "kind": "data_series",
+      "source": "Catálogo de séries",
+      "description": "Ajuste sazonal. Vivia só no sufixo do nome (`ibc_br` × `ibc_br_dessaz`), o que obrigava a ler o rótulo para saber o que se estava comparando.",
+      "vocabulary": [
+        "nsa",
+        "sa",
+        "saar"
+      ]
+    },
+    {
+      "name": "frequency",
+      "kind": "data_series",
+      "source": "Catálogo de séries",
+      "description": "Com que frequência a fonte PUBLICA. Compare com `period` antes de concluir qualquer coisa: as duas divergem de propósito em várias séries, e é essa divergência que engana.",
+      "vocabulary": null
+    },
+    {
+      "name": "served_by",
+      "kind": "data_series",
+      "source": "Catálogo de séries",
+      "description": "Qual operação serve as observações desta série. O catálogo une três casas desde 19/08/2026, e sem isto quem lesse a lista chamaria `getSeries` para todas — cabeçalho e ZERO pontos nas que moram noutra tabela, que se lê como 'o dado não existe'.",
+      "vocabulary": null
+    },
+    {
+      "name": "group",
+      "kind": "commodity",
+      "source": "USGS Mineral Commodity Summaries",
+      "description": "A família da commodity. É o eixo por onde se pergunta \"quais são os críticos\" ou \"quais são os metais preciosos\" — o nome da commodity sozinho não diz a que grupo ela pertence.",
+      "vocabulary": [
+        "Minerais industriais",
+        "Terras raras e críticos",
+        "Metais básicos",
+        "Metais ferrosos e ligas",
+        "Materiais de construção",
+        "Metais preciosos",
+        "Fertilizantes",
+        "Energia"
+      ]
+    },
+    {
+      "name": "is_critical",
+      "kind": "commodity",
+      "source": "USGS Mineral Commodity Summaries",
+      "description": "Se está na lista de MINERAIS CRÍTICOS do USGS — a designação oficial que sustenta política industrial e restrição de exportação nos EUA. Não é juízo sobre escassez geológica nem sobre preço.",
+      "vocabulary": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "units",
+      "kind": "commodity",
+      "source": "USGS Mineral Commodity Summaries",
+      "description": "A unidade em que as observações desta commodity vêm, e ela NÃO é única: 2 das 97 publicam em duas unidades ao mesmo tempo (\"metric tons | thousand metric tons\"), porque produção e reserva usam escalas diferentes. Somar as duas sem ler isto erra por mil.",
+      "vocabulary": null
+    },
+    {
+      "name": "usgs_label",
+      "kind": "commodity",
+      "source": "USGS Mineral Commodity Summaries",
+      "description": "O nome COMO O USGS ESCREVEU, em inglês. Está aqui por procedência: a grafia muda entre edições do relatório, e é por isso que a chave do objeto é o slug e não este texto.",
+      "vocabulary": null
+    },
+    {
+      "name": "area_type",
+      "kind": "country",
+      "source": "ISO 3166-1 (pacote iso-codes)",
+      "description": "País ou BLOCO. A única pergunta que esta propriedade responde é \"posso somar esta linha com as outras\", e ela existe porque a resposta às vezes é não: a União Europeia é objeto do mesmo tipo que a Alemanha, com o mesmo formato de chave, e somá-las conta a Alemanha duas vezes devolvendo um número inteiramente plausível.",
+      "vocabulary": [
+        "country",
+        "bloc"
+      ]
+    },
+    {
+      "name": "name_en",
+      "kind": "country",
+      "source": "ISO 3166-1 (pacote iso-codes)",
+      "description": "O nome em inglês da norma. Serve para casar com fonte estrangeira que publica por nome e não por código — o nome servido pelo objeto é o português.",
+      "vocabulary": null
+    },
+    {
+      "name": "layer",
+      "kind": "market_event",
+      "source": "Ledger de eventos de mercado",
+      "description": "A CAMADA do evento: `estrutural` move o cenário inteiro (juro, câmbio, regulação), `setorial` move um setor e `corporativa` move uma empresa. É o corte que separa 'o que muda a tese' de 'o que muda a notícia'.",
+      "vocabulary": [
+        "estrutural",
+        "setorial",
+        "corporativa"
+      ]
+    },
+    {
+      "name": "category",
+      "kind": "market_event",
+      "source": "Ledger de eventos de mercado",
+      "description": "O assunto do evento, no vocabulário do detector.",
+      "vocabulary": [
+        "macro",
+        "politica",
+        "internacional",
+        "commodities",
+        "corporate",
+        "fii",
+        "cripto",
+        "mercado",
+        "outros"
+      ]
+    },
+    {
+      "name": "event_status",
+      "kind": "market_event",
+      "source": "Ledger de eventos de mercado",
+      "description": "Situação do evento no ledger. Prefixado porque `status` já é propriedade de outros tipos e o vocabulário é outro — sem o prefixo, um corte por `status` responderia duas coisas diferentes conforme o tipo da coorte.",
+      "vocabulary": [
+        "ativo",
+        "arquivado"
+      ]
+    }
+  ],
+  "aspects": [
+    {
+      "kind": "company",
+      "name": "quotes",
+      "description": "Cotações diárias de {ticker}, ajustadas por proventos por default",
+      "operation": "listQuotes",
+      "parameter": "ticker",
+      "grain": "paper"
+    },
+    {
+      "kind": "company",
+      "name": "indicators",
+      "description": "Indicadores fundamentalistas de {ticker}, TTM e consolidados",
+      "operation": "getStockIndicators",
+      "parameter": "ticker",
+      "grain": "paper"
+    },
+    {
+      "kind": "company",
+      "name": "dividends",
+      "description": "Proventos e JCP de {ticker}, com data-ex e data de pagamento",
+      "operation": "listDividends",
+      "parameter": "ticker",
+      "grain": "paper"
+    },
+    {
+      "kind": "company",
+      "name": "trading_status",
+      "description": "Situação da emissora carimbada em {ticker} (recuperação judicial e afins). NÃO é suspensão de pregão",
+      "operation": "getStock",
+      "parameter": "ticker",
+      "grain": "object"
+    },
+    {
+      "kind": "company",
+      "name": "corporate_events",
+      "description": "Eventos societários MECÂNICOS de {ticker} — desdobramento, grupamento, bonificação, com o factor de ajuste por data-ex. Não é o ledger editorial de `getObjectEvents`",
+      "operation": "listCorporateEvents",
+      "parameter": "ticker",
+      "grain": "paper"
+    },
+    {
+      "kind": "company",
+      "name": "documents",
+      "description": "Documentos entregues à CVM, por data de referência e de entrega. É da COMPANHIA, não do papel",
+      "operation": "listCompanyDocuments",
+      "parameter": "company",
+      "grain": "object"
+    },
+    {
+      "kind": "company",
+      "name": "debentures",
+      "description": "Debêntures emitidas por esta companhia",
+      "operation": "listDebentures",
+      "parameter": "issuerCnpj",
+      "grain": "object"
+    },
+    {
+      "kind": "company",
+      "name": "insider",
+      "description": "Fluxo mensal de insiders (compras menos vendas de mercado). É do EMISSOR: qualquer papel desta companhia devolve os MESMOS números, então somar papéis conta a mesma movimentação duas vezes",
+      "operation": "listInsiderMoves",
+      "parameter": "ticker",
+      "grain": "object"
+    },
+    {
+      "kind": "equity_security",
+      "name": "quotes",
+      "description": "Cotações diárias de {ticker}, ajustadas por proventos por default",
+      "operation": "listQuotes",
+      "parameter": "ticker",
+      "grain": "object"
+    },
+    {
+      "kind": "equity_security",
+      "name": "indicators",
+      "description": "Indicadores fundamentalistas de {ticker}, TTM e consolidados",
+      "operation": "getStockIndicators",
+      "parameter": "ticker",
+      "grain": "object"
+    },
+    {
+      "kind": "equity_security",
+      "name": "dividends",
+      "description": "Proventos e JCP de {ticker}, com data-ex e data de pagamento",
+      "operation": "listDividends",
+      "parameter": "ticker",
+      "grain": "object"
+    },
+    {
+      "kind": "equity_security",
+      "name": "trading_status",
+      "description": "Situação da emissora carimbada em {ticker} (recuperação judicial e afins). NÃO é suspensão de pregão. É da COMPANHIA: atravesse `issued` para chegar nela",
+      "operation": "getStock",
+      "parameter": "ticker",
+      "grain": "object"
+    },
+    {
+      "kind": "equity_security",
+      "name": "corporate_events",
+      "description": "Eventos societários MECÂNICOS de {ticker} — desdobramento, grupamento, bonificação, com o factor de ajuste por data-ex. A rota resolve os códigos antigos do papel. Não é o ledger editorial de `getObjectEvents`",
+      "operation": "listCorporateEvents",
+      "parameter": "ticker",
+      "grain": "object"
+    },
+    {
+      "kind": "fund",
+      "name": "profile",
+      "description": "Cadastro do fundo: administrador, gestor, taxas, situação",
+      "operation": "getFund",
+      "parameter": "cnpj",
+      "grain": "object"
+    },
+    {
+      "kind": "fund",
+      "name": "quotes",
+      "description": "Cota diária, patrimônio e captação/resgate",
+      "operation": "listFundQuotes",
+      "parameter": "cnpj",
+      "grain": "object"
+    },
+    {
+      "kind": "fund",
+      "name": "holdings",
+      "description": "Carteira declarada (CDA), por competência",
+      "operation": "listFundHoldings",
+      "parameter": "cnpj",
+      "grain": "object"
+    },
+    {
+      "kind": "instrument",
+      "name": "quotes",
+      "description": "Negócios do secundário de balcão",
+      "operation": "listDebentureQuotes",
+      "parameter": "code",
+      "grain": "object"
+    },
+    {
+      "kind": "index",
+      "name": "composition",
+      "description": "Carteira teórica do índice, com peso por papel",
+      "operation": "getIndexComposition",
+      "parameter": "code",
+      "grain": "object"
+    },
+    {
+      "kind": "data_series",
+      "name": "series",
+      "description": "A série histórica do indicador",
+      "operation": "getSeries",
+      "parameter": "series_id",
+      "grain": "object"
+    }
+  ]
+}
