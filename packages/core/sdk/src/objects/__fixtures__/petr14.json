@@ -1,0 +1,128 @@
+{
+  "id": "pub_b17f596e654e28b0",
+  "redirected_from": null,
+  "has_ambiguous_key": false,
+  "kind": "instrument",
+  "subkind": "debenture",
+  "name": "PETR14 — PETROLEO BRASILEIRO S/A - PETROBRAS",
+  "anchor_type": "isin",
+  "anchor_value": "BRPETRDBS043",
+  "cnpj": null,
+  "cd_cvm": null,
+  "isin": "BRPETRDBS043",
+  "tickers": null,
+  "share_classes": null,
+  "keys": [
+    {
+      "key_type": "isin",
+      "key_value": "BRPETRDBS043",
+      "confidence": "high",
+      "is_anchor": true
+    },
+    {
+      "key_type": "anbima_code",
+      "key_value": "PETR14",
+      "confidence": "high",
+      "is_anchor": false
+    }
+  ],
+  "links": [
+    {
+      "rel": "indexed_to",
+      "direction": "out",
+      "shape": "event",
+      "relationship_count": 1,
+      "assertion_count": 1,
+      "relationship_count_ever": 1,
+      "count": 1,
+      "count_ever": 1,
+      "as_of": null,
+      "note": "",
+      "domain_kinds": [],
+      "range_kinds": [],
+      "traverse": {
+        "operation": "listObjectLinks",
+        "id": "pub_b17f596e654e28b0",
+        "rel": "indexed_to",
+        "direction": "out",
+        "at": null
+      }
+    },
+    {
+      "rel": "issued",
+      "direction": "in",
+      "shape": "event",
+      "relationship_count": 1,
+      "assertion_count": 1,
+      "relationship_count_ever": 1,
+      "count": 1,
+      "count_ever": 1,
+      "as_of": null,
+      "note": "",
+      "domain_kinds": [],
+      "range_kinds": [],
+      "traverse": {
+        "operation": "listObjectLinks",
+        "id": "pub_b17f596e654e28b0",
+        "rel": "issued",
+        "direction": "in",
+        "at": null
+      }
+    }
+  ],
+  "aspects": [
+    {
+      "name": "ratings",
+      "function": "credit.ratings.list",
+      "description": "",
+      "grain": "object",
+      "shape": "event",
+      "operation": "listCreditRatings",
+      "parameter": "assetCode",
+      "value": "BRPETRDBS043",
+      "defaults": {
+        "assetCode": "BRPETRDBS043"
+      },
+      "available": false
+    },
+    {
+      "name": "facts",
+      "function": "objects.facts.latest",
+      "description": "",
+      "grain": "object",
+      "shape": "snapshot",
+      "operation": "getObjectFacts",
+      "parameter": "id",
+      "value": "pub_b17f596e654e28b0",
+      "defaults": {
+        "id": "pub_b17f596e654e28b0"
+      },
+      "available": true
+    },
+    {
+      "name": "properties",
+      "function": "objects.properties.get",
+      "description": "",
+      "grain": "object",
+      "shape": "static",
+      "operation": "getObjectProperties",
+      "parameter": "id",
+      "value": "pub_b17f596e654e28b0",
+      "defaults": {
+        "id": "pub_b17f596e654e28b0"
+      },
+      "available": true
+    }
+  ],
+  "declared_facts": [
+    {
+      "name": "pu_avg",
+      "label": "PU médio",
+      "unit": "brl",
+      "cadence": "irregular",
+      "period": "none",
+      "grain": "object",
+      "series": null
+    }
+  ]
+}
