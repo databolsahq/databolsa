@@ -1,0 +1,4 @@
+interface:
+  display_name: "DataBolsa Credit CLI"
+  short_description: "Work safely with DataBolsa Credit Desk"
+  default_prompt: "Use $databolsa-credit-cli to inspect my Credit Desk data and confirm any write before running it."

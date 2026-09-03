@@ -1,0 +1,12 @@
+# Local scratch — screenshots, ad-hoc spreadsheets, throwaway artifacts
+tmp/
+
+# Node
+node_modules/
+*.tsbuildinfo
+dist/
+
+# Local env — .env.example is tracked; everything else is local-only.
+.env
+.env.local
+.env*.local
