@@ -1,0 +1,2455 @@
+openapi: 3.1.0
+info:
+  title: DataBolsa Wallet API
+  description: "Carteiras por workspace: posição, transações, importação da B3,
+    custos, histórico e raio-X. É o contrato da extensão `databolsa.wallet`;
+    autentica com a chave de API da plataforma (`db_live_...`), com um access
+    token OAuth do conector ou com a sessão do workspace, e escolhe o workspace
+    pelo header `x-databolsa-workspace`."
+  version: 3.12.0
+servers:
+  - url: https://api.databolsa.com
+    description: Produção
+security:
+  - bearerApiKey: []
+tags:
+  - name: Carteira
+    description: "Carteira e perfil do usuário dono da chave de API. A carteira
+      pertence a um WORKSPACE: por default, o pessoal do dono da chave. Para
+      operar as carteiras de uma organização de que ele é membro, envie o header
+      `x-databolsa-workspace` com o id da organização. Organização inexistente
+      ou sem membership responde 404 `workspace_not_found`, nunca cai no
+      pessoal. `x-databolsa-workspace: personal` força o pessoal. O acesso é por
+      RECURSO: cada carteira tem controller e audiência (privada por default;
+      compartilhável no workspace), e a listagem devolve só as acessíveis à
+      credencial. Editar sem permissão responde 403 `wallet_resource_forbidden`;
+      apagar exige quem administra a carteira (o controller). Wallet
+      desinstalada responde 404 `wallet_not_installed` e suspensa recusa escrita
+      com 403 `wallet_suspended`."
+components:
+  securitySchemes:
+    bearerApiKey:
+      type: http
+      scheme: bearer
+  schemas:
+    SuitabilityProfile:
+      type: object
+      properties:
+        level:
+          type: string
+          enum:
+            - Conservador
+            - Moderado
+            - Arrojado
+        score:
+          type: integer
+          description: Posição na régua 0–100 (Conservador→Arrojado), não uma nota.
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              q:
+                type: string
+              a:
+                type: string
+            required:
+              - q
+              - a
+        updatedAt:
+          type: string
+      required:
+        - level
+        - score
+        - answers
+        - updatedAt
+    SuitabilityEnvelope:
+      type: object
+      properties:
+        profile:
+          oneOf:
+            - $ref: "#/components/schemas/SuitabilityProfile"
+            - type: "null"
+      required:
+        - profile
+    PortfolioHolding:
+      type: object
+      description: Posição computada da carteira (snake_case, como todo o /v1).
+        `asset_type` e `transactions[].trade_date` são os MESMOS campos do
+        ledger (listPortfolioTransactions). Valores monetários sempre em BRL;
+        ativos em moeda estrangeira (asset_type=us) expõem também currency,
+        price_native (US$), fx_rate e o bloco `native` com a MESMA posição em
+        dólar (custo, valor de mercado e P&L).
+      properties:
+        symbol:
+          type: string
+        asset_type:
+          type: string
+          description: stock | fii | etf | bdr | index | tesouro | crypto | option |
+            renda_fixa | debenture | fund | us. `debenture` = crédito privado
+            com catálogo próprio (símbolo = código do papel); `fund` = fundo CVM
+            175 (símbolo = CNPJ da classe, 14 dígitos).
+        name:
+          type: string
+        qty:
+          type: number
+        avg_price:
+          type:
+            - number
+            - "null"
+          description: Preço médio de custo (null = custo desconhecido/watchlist).
+        invested_cost:
+          type:
+            - number
+            - "null"
+        cost_basis_known:
+          type: boolean
+          description: true quando todos os buy/sell têm preço → P&L confiável.
+        price:
+          type:
+            - number
+            - "null"
+          description: Cotação atual em BRL (null = sem cotação).
+        change_pct:
+          type:
+            - number
+            - "null"
+          description: Variação do dia em BRL. Em posição estrangeira é o COMPOSTO do
+            retorno do ativo com o do câmbio, (1+ativo)×(1+câmbio)−1 — a
+            variação só do ativo, na moeda dele, está em native.change_pct.
+        market_value:
+          type:
+            - number
+            - "null"
+        unrealized_pl:
+          type:
+            - number
+            - "null"
+          description: Resultado não-realizado em R$. Com valuation=accrual (renda fixa
+            privada) é RENDIMENTO acruado pela taxa contratada, não marcação a
+            mercado.
+        unrealized_pct:
+          type:
+            - number
+            - "null"
+          description: Percentual sobre o custo. null quando o percentual é indefinido —
+            veja unrealized_pct_reason.
+        unrealized_pct_reason:
+          type:
+            - string
+            - "null"
+          enum:
+            - zero_cost
+            - cost_unknown
+            - null
+          description: "Por que unrealized_pct é null numa posição aberta e valorada:
+            zero_cost = custo abaixo de um centavo (resíduo de fusão/bonificação
+            — o percentual é indefinido, não 0 nem centenas de por cento);
+            cost_unknown = há buy/sell sem preço no ledger. null = percentual
+            definido."
+        valuation:
+          type:
+            - string
+            - "null"
+          enum:
+            - market
+            - accrual
+            - cost
+            - null
+          description: "Como a posição foi valorada (linhagem do número): market = cotação
+            (para debênture, o PU do secundário com no máx. ~30 dias); accrual =
+            renda fixa/debênture acruada pela taxa contratada (contrato do
+            usuário ou pré-preenchido do catálogo — veja meta.rf.source); cost =
+            sem cotação, marcada pelo custo remanescente; null = sem valor de
+            mercado."
+        realized_pl:
+          type:
+            - number
+            - "null"
+        realized_by_month:
+          type: object
+          additionalProperties:
+            type: number
+          description: "'AAAA-MM' → R$ realizado no mês. Só presente com `include=monthly`."
+        income_received:
+          type: number
+          description: Proventos recebidos acumulados (R$).
+        income_by_month:
+          type: object
+          additionalProperties:
+            type: number
+          description: "'AAAA-MM' → R$ de proventos no mês. Só presente com
+            `include=monthly`."
+        weight_pct:
+          type:
+            - number
+            - "null"
+        day_change_brl:
+          type:
+            - number
+            - "null"
+        added_at:
+          type:
+            - string
+            - "null"
+          description: Data da 1ª transação (AAAA-MM-DD).
+        tx_count:
+          type: integer
+          description: Nº de transações da posição.
+        closed:
+          type: boolean
+          description: qty = 0 com transações (posição encerrada).
+        is_watchlist:
+          type: boolean
+          description: Entrada sem nenhuma transação (radar).
+        priced:
+          type: boolean
+        renamed_to:
+          type:
+            - string
+            - "null"
+          description: Ticker vigente quando o papel foi renomeado/incorporado.
+        merged_from:
+          type:
+            - array
+            - "null"
+          items:
+            type: string
+          description: "Tickers antigos fundidos nesta posição por sucessão (ex.:
+            ['BCFF11'] num holding BTHF11). O ledger em `transactions` já inclui
+            as transações dos predecessores. null = nenhum."
+        currency:
+          type: string
+          description: Moeda nativa de negociação (BRL | USD).
+        price_native:
+          type:
+            - number
+            - "null"
+          description: Cotação na moeda nativa quando ≠ BRL.
+        fx_rate:
+          type:
+            - number
+            - "null"
+          description: Câmbio usado na marcação (price = price_native × fx_rate).
+        native:
+          $ref: "#/components/schemas/PortfolioHoldingNative"
+        asset_id:
+          type:
+            - string
+            - "null"
+          description: Id do ativo no ledger (correlaciona com /assets e /transactions).
+        meta:
+          description: "portfolio_assets.meta (ex.: { rf: { indexer, rate } })."
+        transactions:
+          type: array
+          description: Ledger da posição, ordenado por trade_date. Só presente com
+            `include=transactions`; o mesmo dado, por ativo, está em
+            listPortfolioTransactions.
+          items:
+            $ref: "#/components/schemas/PortfolioTransaction"
+      required:
+        - symbol
+        - asset_type
+        - qty
+    PortfolioHoldingNative:
+      type:
+        - object
+        - "null"
+      description: >-
+        A MESMA posição na moeda em que ela é negociada, quando não é o real
+        (hoje, asset_type=us em USD). null para o que negocia em BRL.
+
+
+        NÃO é o bloco em BRL dividido por fx_rate: é o mesmo cálculo rodado
+        sobre o ledger cru, porque cada compra foi convertida pela PTAX da SUA
+        data. Por isso invested_cost é o que se pagou em dólar e unrealized_pct
+        é o retorno do ATIVO, enquanto o unrealized_pct em BRL embute também a
+        variação do câmbio no período. Os dois estão certos e respondem a
+        perguntas diferentes.
+
+
+        Não repete qty (idêntico), weight_pct (adimensional) nem day_change_brl
+        (escopo BRL).
+      properties:
+        currency:
+          type: string
+          description: "Moeda da negociação (ex.: USD)."
+        avg_price:
+          type:
+            - number
+            - "null"
+          description: Preço médio pago na moeda nativa.
+        invested_cost:
+          type:
+            - number
+            - "null"
+        cost_basis_known:
+          type: boolean
+          description: "Pode divergir do cost_basis_known em BRL: numa data sem PTAX o
+            custo em real fica desconhecido enquanto o em dólar segue
+            conhecido."
+        price:
+          type:
+            - number
+            - "null"
+          description: Cotação na moeda nativa (= price_native).
+        change_pct:
+          type:
+            - number
+            - "null"
+          description: Variação do dia do ativo, sem o câmbio.
+        market_value:
+          type:
+            - number
+            - "null"
+        unrealized_pl:
+          type:
+            - number
+            - "null"
+        unrealized_pct:
+          type:
+            - number
+            - "null"
+          description: Retorno do ativo, sem o efeito do câmbio.
+        realized_pl:
+          type:
+            - number
+            - "null"
+        income_received:
+          type: number
+      required:
+        - currency
+    PortfolioFx:
+      type:
+        - object
+        - "null"
+      description: >-
+        Câmbio USD/BRL aplicado na marcação a mercado das posições estrangeiras
+        desta carteira. Publicado para a conversão ser conferível: os totais da
+        carteira são BRL e dependem desta taxa. null quando a carteira não tem
+        ativo em moeda estrangeira.
+
+
+        Atenção: esta é a taxa SPOT, usada só na marcação. O custo de cada
+        compra foi convertido pela PTAX da data do trade, então invested_cost ÷
+        usd_brl não devolve o custo em dólar — para isso use
+        holdings[].native.invested_cost.
+      properties:
+        usd_brl:
+          type: number
+          description: Reais por dólar.
+        as_of:
+          type: string
+          description: Timestamp da taxa. Com source=usdt é ISO 8601 completo (o par é
+            atualizado a cada minuto); com source=bcb é a data do pregão
+            (AAAA-MM-DD).
+        source:
+          type: string
+          enum:
+            - usdt
+            - bcb
+          description: usdt = par USDT/BRL, atualizado 24/7 e fresco mesmo fora do horário
+            de pregão; bcb = PTAX de venda do BCB (série 1), último fechamento —
+            o fallback.
+        change_pct:
+          type:
+            - number
+            - "null"
+          description: Variação da PRÓPRIA fonte acima (24h do par × pregão a pregão da
+            PTAX), nunca uma mistura das duas. Compõe change_pct das posições
+            estrangeiras.
+      required:
+        - usd_brl
+        - as_of
+        - source
+    PortfolioByCarteira:
+      type: object
+      properties:
+        name:
+          type: string
+        patrimonio:
+          type: number
+        unrealized_pct:
+          type: number
+        open_positions:
+          type: integer
+          description: Posições com quantidade > 0 nesta carteira.
+        watchlist_entries:
+          type: integer
+          description: Entradas sem nenhuma transação (radar) nesta carteira.
+      required:
+        - name
+        - patrimonio
+        - unrealized_pct
+        - open_positions
+        - watchlist_entries
+    PortfolioListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        ledger_assets:
+          type: integer
+          description: Nº de LINHAS DE ATIVO no ledger da carteira. Inclui posições já
+            encerradas e tickers predecessores fundidos por sucessão, que não
+            têm holding próprio — por isso é ≥ holdings_count do detalhe, que
+            por sua vez é ≥ open_positions.
+        created_at:
+          type: string
+          format: date-time
+        exclude_from_consolidated:
+          type: boolean
+          description: true = carteira de simulação.
+      required:
+        - id
+        - name
+    PortfolioDetail:
+      type: object
+      description: "Carteira computada: posições derivadas do ledger + métricas
+        agregadas (snake_case)."
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        visibility:
+          type: string
+        created_at:
+          type:
+            - string
+            - "null"
+        exclude_from_consolidated:
+          type: boolean
+          description: true = carteira de simulação.
+        holdings_count:
+          type: integer
+          description: "Linhas devolvidas em holdings[]. Default: abertas + watchlist; com
+            `include=closed` soma também as encerradas."
+        open_positions:
+          type: integer
+          description: Posições com quantidade > 0.
+        closed_positions:
+          type: integer
+          description: Posições zeradas por venda (qty = 0 com transações).
+        watchlist_entries:
+          type: integer
+          description: Entradas sem nenhuma transação (radar).
+        merged_assets:
+          type: integer
+          description: Tickers predecessores fundidos nas posições por sucessão. Contam em
+            ledger_assets (listPortfolios) e não em holdings_count — é a
+            diferença entre as duas contagens.
+        patrimonio:
+          type: number
+        invested:
+          type: number
+        unrealized_pl:
+          type: number
+        unrealized_pct:
+          type: number
+        realized_pl:
+          type: number
+        realized_by_month:
+          type: object
+          additionalProperties:
+            type: number
+        income_received:
+          type: number
+        income_by_month:
+          type: object
+          additionalProperties:
+            type: number
+        total_pl:
+          type: number
+          description: unrealized_pl + realized_pl.
+        xirr:
+          type:
+            - number
+            - "null"
+          description: "XIRR (TIR anualizada, money-weighted): o retorno REAL do
+            investidor sobre os fluxos datados (aportes/resgates/proventos) +
+            patrimônio a mercado como valor terminal. Decimal a.a. (0,1423 =
+            14,23%). null quando custo desconhecido, fluxo sem TIR definível ou
+            implausível (> +300% a.a., artefato de giro/curto prazo → use o
+            twr). Mesmo valor de returns.xirr, onde ele aparece ao lado do
+            time-weighted."
+        returns:
+          $ref: "#/components/schemas/PortfolioReturns"
+        day_change_brl:
+          type: number
+        day_change_pct:
+          type: number
+        kind_mix:
+          type: string
+          description: "Resumo humano, ex.: '3 ações · 2 FIIs'."
+        is_watchlist:
+          type: boolean
+        any_unpriced:
+          type: boolean
+        any_cost_unknown:
+          type: boolean
+        fx:
+          $ref: "#/components/schemas/PortfolioFx"
+        holdings:
+          type: array
+          description: "Posições com qty, preço médio, valor de mercado, P&L, proventos e
+            peso. Default compacto: só abertas + watchlist (posições encerradas
+            exigem `include=closed`) e sem as séries mensais por posição
+            (`include=monthly`)."
+          items:
+            $ref: "#/components/schemas/PortfolioHolding"
+    PortfolioTransaction:
+      type: object
+      description: Transação do ledger. É o MESMO shape das transações embutidas em
+        PortfolioHolding.transactions.
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          description: buy | sell | split | adjust
+        trade_date:
+          type: string
+          description: AAAA-MM-DD
+        quantity:
+          type: number
+        price:
+          type:
+            - number
+            - "null"
+          description: Preço unitário (null = custo desconhecido).
+        fees:
+          type: number
+        ratio:
+          type:
+            - number
+            - "null"
+          description: Fator do split (só kind=split).
+        currency:
+          type: string
+          description: "Moeda de price/fees DESTA linha. O ledger é devolvido CRU, como
+            lançado: o de um ativo americano vem em USD e NÃO passou pela
+            conversão que as posições sofrem. Sem ler este campo o consumidor
+            assume real e exibe uma compra de US$ 178,40 como R$ 178,40."
+        note:
+          type:
+            - string
+            - "null"
+        event_kind:
+          type:
+            - string
+            - "null"
+          description: "Subtipo do evento societário de origem quando a transação veio de
+            evento (import da Movimentação B3): split | bonus | incorporation |
+            subscription | fraction. null = lançamento comum."
+      required:
+        - id
+        - kind
+        - trade_date
+        - quantity
+    PortfolioTwr:
+      type:
+        - object
+        - "null"
+      description: TWR (time-weighted return) derivado da série mensal — neutraliza o
+        efeito do timing dos aportes, o número comparável a benchmark
+        (CDI/IBOV/IPCA). null quando não há período válido.
+      properties:
+        cumulative:
+          type: number
+          description: Retorno acumulado na janela (decimal; 0,25 = +25%).
+        annualized:
+          type:
+            - number
+            - "null"
+          description: Equivalente anualizado (decimal).
+        months:
+          type: integer
+          description: Meses na grade.
+    PortfolioReturns:
+      type: object
+      description: As DUAS medidas de retorno da carteira no mesmo objeto. Elas
+        divergem sempre que os aportes não são uniformes — é esperado, não é
+        erro, e `explain` diz isso em uma linha.
+      properties:
+        xirr:
+          type:
+            - number
+            - "null"
+          description: Money-weighted anualizada (decimal a.a.).
+        twr:
+          $ref: "#/components/schemas/PortfolioTwr"
+        explain:
+          type: string
+          description: Nota curta sobre a diferença entre as duas medidas.
+    PortfolioHistoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            description: "Um mês: patrimônio, aporte acumulado, proventos e realizado."
+        meta:
+          type: object
+          properties:
+            next_cursor:
+              type:
+                - string
+                - "null"
+              description: "Sempre null: resposta em página única."
+            count:
+              type: integer
+              description: Itens nesta página.
+            twr:
+              $ref: "#/components/schemas/PortfolioTwr"
+          required:
+            - next_cursor
+            - count
+      required:
+        - data
+        - meta
+    PortfolioHistoryDetailResponse:
+      type: object
+      description: "Histórico de UMA carteira: a série mensal em `data`, o TWR e a
+        nota que o separa da xirr do detalhe em `meta`."
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            description: "Um mês: patrimônio, aporte acumulado, proventos e realizado."
+        meta:
+          type: object
+          properties:
+            next_cursor:
+              type:
+                - string
+                - "null"
+              description: "Sempre null: resposta em página única."
+            count:
+              type: integer
+              description: Itens nesta página.
+            twr:
+              $ref: "#/components/schemas/PortfolioTwr"
+            returns_explain:
+              type: string
+              description: Por que o twr daqui difere da xirr do detalhe da carteira
+                (time-weighted × money-weighted).
+          required:
+            - next_cursor
+            - count
+      required:
+        - data
+        - meta
+    PortfolioXraySlice:
+      type: object
+      properties:
+        value_brl:
+          type: number
+          description: Valor cru em BRL.
+        pct:
+          type: number
+          description: Percentual 0-100 (em by_indexer, sobre o total de renda fixa).
+      required:
+        - value_brl
+        - pct
+    PortfolioXray:
+      type: object
+      description: "Raio-X de concentração: agregações determinísticas + flags
+        factuais. Só posições abertas com valor; arrays ordenados por valor
+        (maiores primeiro)."
+      properties:
+        by_class:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/PortfolioXraySlice"
+              - type: object
+                properties:
+                  class:
+                    type: string
+                    description: stock | fii | etf | bdr | tesouro | renda_fixa | debenture | fund |
+                      crypto | us | option
+                required:
+                  - class
+        by_sector:
+          type: array
+          description: Só posições de bolsa (ações/FIIs/ETFs/BDRs); sem setor conhecido =
+            'Sem classificação'.
+          items:
+            allOf:
+              - $ref: "#/components/schemas/PortfolioXraySlice"
+              - type: object
+                properties:
+                  sector:
+                    type: string
+                required:
+                  - sector
+        by_indexer:
+          type: array
+          description: Exposição da RENDA FIXA por indexador — pct sobre o total de renda
+            fixa, não da carteira.
+          items:
+            allOf:
+              - $ref: "#/components/schemas/PortfolioXraySlice"
+              - type: object
+                properties:
+                  indexer:
+                    type: string
+                    description: selic | ipca | prefixado | cdi | outro
+                required:
+                  - indexer
+        by_currency:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/PortfolioXraySlice"
+              - type: object
+                properties:
+                  currency:
+                    type: string
+                    description: BRL | USD
+                required:
+                  - currency
+        top_positions:
+          type: array
+          description: As 10 maiores posições por valor.
+          items:
+            allOf:
+              - $ref: "#/components/schemas/PortfolioXraySlice"
+              - type: object
+                properties:
+                  symbol:
+                    type: string
+                  class:
+                    type: string
+                required:
+                  - symbol
+                  - class
+        flags:
+          type: array
+          items:
+            type: string
+          description: Fatos pt-BR quando limites de concentração estouram (posição >10%,
+            setor >25%, classe >60%, indexador >70% da RF, moeda estrangeira
+            >30%). Sem opinião — cite como estão.
+        meta:
+          type: object
+          properties:
+            patrimonio_brl:
+              type: number
+              description: "Base dos percentuais: soma das posições consideradas."
+            rf_total_brl:
+              type: number
+              description: Base dos percentuais de by_indexer.
+            reference:
+              type: string
+              description: Data de referência da valoração (AAAA-MM-DD).
+            positions_considered:
+              type: integer
+            unpriced_ignored:
+              type: integer
+              description: Posições abertas sem valor, fora do raio-X.
+          required:
+            - patrimonio_brl
+            - rf_total_brl
+            - reference
+            - positions_considered
+            - unpriced_ignored
+      required:
+        - by_class
+        - by_sector
+        - by_indexer
+        - by_currency
+        - top_positions
+        - flags
+        - meta
+    PortfolioCosts:
+      type: object
+      description: "Raio-X de custos recorrentes: itens com destinatário e referência,
+        agregação por destinatário, totais e o que ficou sem estimativa (com
+        motivo). Estimativas determinísticas — não é recomendação."
+      properties:
+        items:
+          type: array
+          description: Custos estimados por posição, maiores primeiro.
+          items:
+            type: object
+            properties:
+              symbol:
+                type: string
+                description: CNPJ da classe (fund), nome do título (tesouro) ou código do papel
+                  (renda_fixa).
+              class:
+                type: string
+                description: fund | tesouro | renda_fixa
+              name:
+                type:
+                  - string
+                  - "null"
+              value_brl:
+                type: number
+                description: Valor da posição (base do custo).
+              cost_kind:
+                type: string
+                enum:
+                  - fund_admin_fee
+                  - tesouro_custody
+                  - rf_cdi_gap
+                description: fund_admin_fee = taxa de administração as-filed; tesouro_custody =
+                  custódia B3; rf_cdi_gap = gap estimado de RF tributável
+                  contratada abaixo de 100% do CDI.
+              annual_cost_pct:
+                type:
+                  - number
+                  - "null"
+                description: Custo % a.a. efetivo sobre o valor (já líquido de isenção).
+              annual_cost_brl:
+                type: number
+                description: Custo estimado em R$/ano.
+              recipient:
+                type: string
+                description: Para quem o custo vai (administrador do fundo, B3,
+                  emissor/distribuidor).
+              benchmark:
+                type:
+                  - object
+                  - "null"
+                description: "Referência de comparação. Null = sem referência (ex.: custódia;
+                  poucos pares)."
+                properties:
+                  label:
+                    type: string
+                    description: "Ex.: 'mediana dos pares (Renda Fixa)' | '100% do CDI'."
+                  value_pct:
+                    type: number
+                  peers:
+                    type: integer
+                    description: Nº de pares da mediana (só em fund_admin_fee).
+                required:
+                  - label
+                  - value_pct
+              excess_cost_brl:
+                type:
+                  - number
+                  - "null"
+                description: Parcela ACIMA da referência (R$/ano). Null = sem referência.
+              note:
+                type:
+                  - string
+                  - "null"
+                description: Fato adicional (taxa de performance no cadastro; regra de isenção;
+                  base da estimativa).
+            required:
+              - symbol
+              - class
+              - name
+              - value_brl
+              - cost_kind
+              - annual_cost_pct
+              - annual_cost_brl
+              - recipient
+              - benchmark
+              - excess_cost_brl
+              - note
+        not_estimated:
+          type: array
+          description: Posições SEM estimativa, agregadas por (classe, motivo) — o motivo
+            é parte da resposta.
+          items:
+            type: object
+            properties:
+              class:
+                type: string
+              reason:
+                type: string
+              positions:
+                type: integer
+              symbols:
+                type: array
+                items:
+                  type: string
+                description: Até 10 símbolos de exemplo.
+            required:
+              - class
+              - reason
+              - positions
+              - symbols
+        by_recipient:
+          type: array
+          description: Custo anual agregado por destinatário, maiores primeiro.
+          items:
+            type: object
+            properties:
+              recipient:
+                type: string
+              annual_cost_brl:
+                type: number
+            required:
+              - recipient
+              - annual_cost_brl
+        totals:
+          type: object
+          properties:
+            annual_cost_brl:
+              type: number
+              description: Soma dos custos estimados (R$/ano).
+            above_reference_brl:
+              type: number
+              description: Soma do que está acima das referências (mediana dos pares + gap vs
+                CDI).
+            pct_of_patrimonio:
+              type:
+                - number
+                - "null"
+              description: Custo anual como % do patrimônio considerado.
+          required:
+            - annual_cost_brl
+            - above_reference_brl
+            - pct_of_patrimonio
+        flags:
+          type: array
+          items:
+            type: string
+          description: Fatos pt-BR (fundo acima da mediana dos pares; RF abaixo de 100% do
+            CDI). Sem opinião — cite como estão.
+        meta:
+          type: object
+          properties:
+            patrimonio_brl:
+              type: number
+            reference:
+              type: string
+              description: Data de referência (AAAA-MM-DD).
+            positions_considered:
+              type: integer
+            unpriced_ignored:
+              type: integer
+              description: Posições abertas sem valor, fora da estimativa.
+            cdi_12m_pct:
+              type:
+                - number
+                - "null"
+              description: CDI acumulado 12m usado no gap de RF (%).
+            caveat:
+              type: string
+              description: O que a estimativa cobre e o que fica de fora — repasse ao usuário.
+          required:
+            - patrimonio_brl
+            - reference
+            - positions_considered
+            - unpriced_ignored
+            - cdi_12m_pct
+            - caveat
+      required:
+        - items
+        - not_estimated
+        - by_recipient
+        - totals
+        - flags
+        - meta
+    PortfolioLookThrough:
+      type: object
+      description: "Exposição efetiva: posições em fundos abertas na última carteira
+        mensal divulgada de cada um (defasada — não é a posição de hoje).
+        Exposição indireta é PISO: cobre só o que o fundo divulgou."
+      properties:
+        exposures:
+          type: array
+          description: Ativos alcançados VIA FUNDOS, com a posição direta ao lado (top 50
+            por valor total).
+          items:
+            type: object
+            properties:
+              symbol:
+                type: string
+                description: Ticker (kind=stock) ou código da debênture (kind=debenture).
+              kind:
+                type: string
+                enum:
+                  - stock
+                  - debenture
+              direct_value_brl:
+                type: number
+                description: Posição direta da carteira no mesmo ativo (0 = só via fundos).
+              indirect_value_brl:
+                type: number
+                description: Exposição proporcional via fundos.
+              total_value_brl:
+                type: number
+              pct_of_portfolio:
+                type:
+                  - number
+                  - "null"
+                description: total_value_brl ÷ patrimônio, 0-100.
+              via:
+                type: array
+                description: Por quais fundos DA CARTEIRA a exposição chega (2º nível de FoF
+                  atribuído ao fundo direto).
+                items:
+                  type: object
+                  properties:
+                    fund_cnpj:
+                      type: string
+                    fund_name:
+                      type:
+                        - string
+                        - "null"
+                    value_brl:
+                      type: number
+                  required:
+                    - fund_cnpj
+                    - fund_name
+                    - value_brl
+            required:
+              - symbol
+              - kind
+              - direct_value_brl
+              - indirect_value_brl
+              - total_value_brl
+              - pct_of_portfolio
+              - via
+        funds_opened:
+          type: array
+          items:
+            type: object
+            properties:
+              fund_cnpj:
+                type: string
+              fund_name:
+                type:
+                  - string
+                  - "null"
+              position_value_brl:
+                type: number
+                description: Valor da posição no fundo (BRL).
+              comptc_date:
+                type:
+                  - string
+                  - "null"
+                description: Competência da carteira divulgada usada (AAAA-MM-DD).
+              coverage_pct:
+                type:
+                  - number
+                  - "null"
+                description: Quanto do fundo os ativos divulgados explicam (0-100; pode passar
+                  de 100 por descasamento de datas).
+              method:
+                type: string
+                enum:
+                  - pl
+                  - disclosed_sum
+                description: "Denominador dos pesos: patrimônio oficial na competência (pl) ou
+                  soma dos ativos divulgados (disclosed_sum, quando o patrimônio
+                  falta — coverage vira 100 por construção)."
+            required:
+              - fund_cnpj
+              - fund_name
+              - position_value_brl
+              - comptc_date
+              - coverage_pct
+              - method
+        not_opened:
+          type: array
+          description: Posições em fundo que NÃO puderam ser abertas (sem carteira
+            divulgada ou sem valor).
+          items:
+            type: object
+            properties:
+              symbol:
+                type: string
+                description: CNPJ do fundo.
+              fund_name:
+                type:
+                  - string
+                  - "null"
+              position_value_brl:
+                type:
+                  - number
+                  - "null"
+              reason:
+                type: string
+            required:
+              - symbol
+              - fund_name
+              - position_value_brl
+              - reason
+        meta:
+          type: object
+          properties:
+            patrimonio_brl:
+              type: number
+            comptc_dates:
+              type: array
+              items:
+                type: string
+              description: Competências das carteiras divulgadas usadas.
+            exposures_truncated:
+              type: integer
+              description: Linhas além do top 50 (ausente quando não truncou).
+            note:
+              type: string
+              description: Presente quando a carteira não tem fundos (resposta válida, vazia).
+            caveat:
+              type: string
+              description: Limitação metodológica — repasse ao usuário quando relevante.
+          required:
+            - patrimonio_brl
+            - comptc_dates
+            - caveat
+      required:
+        - exposures
+        - funds_opened
+        - not_opened
+        - meta
+    PortfolioImportSummary:
+      type: object
+      description: Resumo de um import de planilha (o detalhe linha a linha fica em
+        listPortfolioImportRows).
+      properties:
+        import_id:
+          type: string
+        source:
+          type: string
+          description: negociacao | movimentacao | manual (detectado pelo cabeçalho).
+        parsed:
+          type: integer
+          description: Linhas entendidas no arquivo.
+        imported:
+          type: integer
+          description: Lançamentos novos gravados.
+        duplicates_skipped:
+          type: integer
+          description: Lançamentos já existentes (reimport) pulados.
+        rows_ignored:
+          type: integer
+        cross_source_skipped:
+          type: integer
+          description: Trades pulados por já estarem cobertos por outra fonte.
+        symbols:
+          type: integer
+        period:
+          type: object
+          properties:
+            from:
+              type:
+                - string
+                - "null"
+            to:
+              type:
+                - string
+                - "null"
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Até 10 avisos.
+        warnings_truncated:
+          type: integer
+          description: Nº de avisos omitidos além dos 10 primeiros.
+      required:
+        - import_id
+        - source
+        - imported
+    PortfolioImportListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type:
+            - string
+            - "null"
+        source:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        summary:
+          type: object
+        warnings:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - source
+    PortfolioImportRow:
+      type: object
+      properties:
+        row_index:
+          type: integer
+        status:
+          type: string
+          description: imported | ignored | duplicate | error
+        kind:
+          type:
+            - string
+            - "null"
+        label:
+          type:
+            - string
+            - "null"
+        reason:
+          type:
+            - string
+            - "null"
+        external_id:
+          type:
+            - string
+            - "null"
+        raw: {}
+      required:
+        - row_index
+        - status
+    PortfolioPosition:
+      type: object
+      description: Posição resumida do consolidado (o detalhe completo vem em
+        getPortfolioDetail).
+      properties:
+        symbol:
+          type: string
+        asset_type:
+          type: string
+        qty:
+          type: number
+        weight_pct:
+          type:
+            - number
+            - "null"
+        market_value:
+          type:
+            - number
+            - "null"
+        unrealized_pct:
+          type:
+            - number
+            - "null"
+      required:
+        - symbol
+        - asset_type
+        - qty
+    PortfolioContext:
+      type: object
+      description: Carteira consolidada do usuário (mesmo resumo que o agente de IA usa).
+      properties:
+        has_portfolio:
+          type: boolean
+        carteiras:
+          type: integer
+        patrimonio:
+          type: number
+        invested:
+          type: number
+        unrealized_pl:
+          type: number
+        unrealized_pct:
+          type: number
+        realized_pl:
+          type: number
+        xirr:
+          type:
+            - number
+            - "null"
+          description: XIRR (TIR anualizada, money-weighted) do consolidado. Decimal a.a.
+            (0,14 = 14%).
+        day_change_brl:
+          type: number
+        kind_mix:
+          type: string
+        any_unpriced:
+          type: boolean
+        positions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortfolioPosition"
+          description: Todas as posições consolidadas (qty > 0), ordenadas por valor
+            (maiores primeiro).
+        by_carteira:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortfolioByCarteira"
+      required:
+        - has_portfolio
+        - carteiras
+        - patrimonio
+        - invested
+        - unrealized_pl
+        - unrealized_pct
+        - realized_pl
+        - day_change_brl
+        - kind_mix
+        - any_unpriced
+        - positions
+        - by_carteira
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        details:
+          type: object
+          additionalProperties: {}
+          description: O erro em forma legível por programa (`code`, valores recebidos,
+            tetos).
+      required:
+        - type
+        - title
+        - status
+paths:
+  /v1/portfolio:
+    get:
+      responses:
+        "200":
+          description: Carteira consolidada do usuário.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioContext"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getPortfolio
+      tags:
+        - Carteira
+      parameters: []
+      x-capability: account
+      summary: Sua carteira (consolidada)
+      description: "Retorna a carteira consolidada do dono da chave de API:
+        patrimônio, total investido, P&L realizado e não-realizado, variação do
+        dia, composição por classe, TODAS as posições (`positions`, maiores
+        primeiro) e quebra por carteira. Exige uma chave de API por usuário
+        (crie em https://databolsa.com/conta)."
+  /v1/portfolio/history:
+    get:
+      responses:
+        "200":
+          description: Pontos mensais em `data`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioHistoryResponse"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getPortfolioHistory
+      tags:
+        - Carteira
+      parameters: []
+      x-capability: account
+      summary: Histórico mensal consolidado
+      description: "Série mensal do patrimônio consolidado do dono da chave: valor de
+        mercado, aporte acumulado, proventos recebidos e resultado realizado,
+        mês a mês. Exclui carteiras marcadas como simulação."
+  /v1/portfolios:
+    get:
+      responses:
+        "200":
+          description: Carteiras da conta.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PortfolioListItem"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                        description: "Sempre null: resposta em página única."
+                      count:
+                        type: integer
+                        description: Itens nesta página.
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: listPortfolios
+      tags:
+        - Carteira
+      parameters: []
+      x-capability: account
+      summary: Suas carteiras
+      description: Lista as carteiras do dono da chave (id, nome, nº de linhas de
+        ativo no ledger, flag de simulação). Use o `id` nas demais operações de
+        carteira.
+    post:
+      responses:
+        "201":
+          description: Carteira criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioListItem"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: createPortfolio
+      tags:
+        - Carteira
+      parameters: []
+      x-capability: account
+      summary: Criar carteira
+      description: CRIA uma carteira REAL na conta do dono da chave. O número de
+        carteiras é limitado pelo plano (resposta 402 quando o teto é atingido).
+        Nome único por conta (409 em duplicidade).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Nome da carteira (até 60 caracteres, único na conta).
+                visibility:
+                  type: string
+                  enum:
+                    - private
+                    - unlisted
+                    - public
+                  description: Visibilidade (default private).
+  /v1/portfolios/import-template:
+    get:
+      responses:
+        "200":
+          description: Arquivo CSV.
+          content:
+            text/csv:
+              schema:
+                type: string
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getPortfolioImportTemplate
+      tags:
+        - Carteira
+      parameters: []
+      x-capability: account
+      summary: Template CSV de import manual
+      description: "Baixa o template CSV de preenchimento manual (colunas: ticker,
+        operacao, data, quantidade, preco) aceito pelo import de planilha."
+  /v1/portfolios/{id}:
+    get:
+      responses:
+        "200":
+          description: Carteira computada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioDetail"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getPortfolioDetail
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira (de listPortfolios).
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          description: "Camadas separadas por vírgula: `closed` inclui posições
+            encerradas; `monthly`, séries mensais por posição; `transactions`, o
+            ledger completo e potencialmente volumoso."
+          schema:
+            type: string
+            example: closed,monthly
+      x-capability: account
+      summary: Detalhe de uma carteira
+      description: Retorna posições calculadas, totais, proventos, resultado e
+        retornos. Por padrão, `holdings` inclui apenas posições abertas e
+        watchlist, sem séries mensais ou transações. Use `include` para
+        adicionar essas camadas, ou `listPortfolioTransactions` para o ledger de
+        um ativo.
+    patch:
+      responses:
+        "200":
+          description: Campos alterados.
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: updatePortfolio
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+      x-capability: account
+      summary: Editar carteira
+      description: "ALTERA a carteira REAL do dono da chave: renomeia (`name`), muda a
+        visibilidade (`visibility`) e/ou marca como simulação
+        (`exclude_from_consolidated`, fora do consolidado). Informe ao menos um
+        campo."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Novo nome (até 60 caracteres, único na conta).
+                visibility:
+                  type: string
+                  enum:
+                    - private
+                    - unlisted
+                    - public
+                  description: Nova visibilidade.
+                exclude_from_consolidated:
+                  type: boolean
+                  description: true = carteira de simulação (fora do consolidado).
+    delete:
+      responses:
+        "200":
+          description: Carteira apagada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                  id:
+                    type: string
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: deletePortfolio
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+      x-capability: account
+      summary: Apagar carteira
+      description: APAGA a carteira REAL do dono da chave, com TODOS os ativos e
+        transações (cascata, irreversível). Confirme com o usuário antes de
+        chamar.
+  /v1/portfolios/{id}/history:
+    get:
+      responses:
+        "200":
+          description: Pontos mensais em `data`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioHistoryDetailResponse"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getPortfolioHistoryById
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+      x-capability: account
+      summary: Histórico mensal de uma carteira
+      description: Série mensal (patrimônio, aporte, proventos, realizado) de UMA
+        carteira específica, com o TWR time-weighted. A xirr money-weighted da
+        mesma carteira está em getPortfolioDetail (`returns`).
+  /v1/portfolios/{id}/xray:
+    get:
+      responses:
+        "200":
+          description: Raio-X da carteira.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioXray"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getPortfolioXray
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira (de listPortfolios).
+          schema:
+            type: string
+      x-capability: account
+      summary: Raio-X de concentração da carteira
+      description: Distribui posições abertas por classe, setor, indexador e moeda, e
+        lista as dez maiores. `flags` registra limites de concentração sem
+        emitir recomendação. Percentuais de `by_indexer` usam apenas a renda
+        fixa; os demais usam a carteira. Posições sem valor são ignoradas e
+        contadas em `meta.unpriced_ignored`. Valores estão em reais e
+        percentuais de 0 a 100.
+  /v1/portfolios/{id}/costs:
+    get:
+      responses:
+        "200":
+          description: Raio-X de custos da carteira.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioCosts"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getPortfolioCosts
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira (de listPortfolios).
+          schema:
+            type: string
+      x-capability: account
+      summary: Raio-X de custos recorrentes da carteira
+      description: "Estima custos anuais observáveis de posições abertas:
+        administração de fundos, custódia do Tesouro e diferença de renda fixa
+        bancária tributável para 100% do CDI. `items` traz destinatário,
+        referência e excesso; `by_recipient` e `totals` agregam. Custos sem base
+        pública ficam em `not_estimated`, sem valor inferido. `flags` descreve
+        fatos, não recomendações."
+  /v1/portfolios/{id}/look-through:
+    get:
+      responses:
+        "200":
+          description: Exposição efetiva da carteira.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioLookThrough"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getPortfolioLookThrough
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira (de listPortfolios).
+          schema:
+            type: string
+      x-capability: account
+      summary: Exposição efetiva (abre as posições em fundos)
+      description: Abre posições em fundos pela última carteira mensal divulgada e
+        agrega exposição direta e indireta por ativo, até dois níveis. `via`
+        mostra os fundos intermediários; `funds_opened` informa competência,
+        cobertura e denominador, e `not_opened` lista fundos sem dados. Como as
+        carteiras são defasadas e parciais, a exposição indireta é um piso.
+        Valores estão em reais e percentuais de 0 a 100.
+  /v1/portfolios/{id}/assets:
+    post:
+      responses:
+        "201":
+          description: Ativo na carteira.
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: addPortfolioAsset
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+      x-capability: account
+      summary: Adicionar ativo à carteira
+      description: "Adiciona um ativo de forma idempotente; sem transações, ele
+        funciona como watchlist. Prefira `entity_id`. Alternativamente, use tipo
+        e símbolo: nome oficial para Tesouro, CNPJ da classe para fundo, código
+        do papel para debênture e código de balcão para outras rendas fixas. A
+        marcação usa negócio recente quando disponível; caso contrário,
+        accrual."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Identifique o ativo por `entity_id` (o objeto do grafo, traduzido
+                pelo servidor para tipo e símbolo) ou por `asset_type` e
+                `symbol`.
+              properties:
+                entity_id:
+                  type: string
+                  description: O objeto do grafo (`pub_…`). Dispensa asset_type/symbol; recusado
+                    com o motivo quando o objeto não entra na carteira.
+                asset_type:
+                  type: string
+                  enum:
+                    - stock
+                    - fii
+                    - etf
+                    - bdr
+                    - index
+                    - tesouro
+                    - crypto
+                    - option
+                    - renda_fixa
+                    - debenture
+                    - fund
+                    - us
+                  description: Tipo do ativo (com symbol; dispensável com entity_id).
+                symbol:
+                  type: string
+                  description: "Ticker (ex.: PETR4) ou nome oficial do título do Tesouro (com
+                    asset_type; dispensável com entity_id)."
+    delete:
+      responses:
+        "200":
+          description: Ativo removido.
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: removePortfolioAsset
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+        - name: entity_id
+          in: query
+          required: false
+          description: O objeto do grafo (`pub_…`); dispensa asset_type/symbol.
+          schema:
+            type: string
+        - name: asset_type
+          in: query
+          required: false
+          description: Tipo do ativo. Com symbol; dispensável com entity_id.
+          schema:
+            type: string
+            enum:
+              - stock
+              - fii
+              - etf
+              - bdr
+              - index
+              - tesouro
+              - crypto
+              - option
+              - renda_fixa
+              - debenture
+              - fund
+              - us
+        - name: symbol
+          in: query
+          required: false
+          description: Ticker ou nome do título.
+          schema:
+            type: string
+      x-capability: account
+      summary: Remover ativo da carteira
+      description: REMOVE um ativo da carteira REAL do dono da chave, APAGANDO o
+        ledger de transações dele nesta carteira (cascata, irreversível).
+        Confirme com o usuário antes de chamar.
+    patch:
+      responses:
+        "200":
+          description: Meta da posição.
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: updatePortfolioAsset
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+        - name: entity_id
+          in: query
+          required: false
+          description: O objeto do grafo (`pub_…`); dispensa asset_type/symbol.
+          schema:
+            type: string
+        - name: asset_type
+          in: query
+          required: false
+          description: Tipo do ativo (renda_fixa/tesouro). Com symbol; dispensável com
+            entity_id.
+          schema:
+            type: string
+        - name: symbol
+          in: query
+          required: false
+          description: Código do papel.
+          schema:
+            type: string
+      x-capability: account
+      summary: Taxa contratada de renda fixa
+      description: "DEFINE a taxa contratada de uma posição de renda fixa (para o
+        cálculo de rendimento): `rf_indexer` (cdi = % do CDI, prefixado = %
+        a.a., ipca = IPCA + % a.a.) e `rf_rate`. Use `rf_indexer: none` para
+        limpar."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rf_indexer
+              properties:
+                rf_indexer:
+                  type: string
+                  enum:
+                    - cdi
+                    - prefixado
+                    - ipca
+                    - none
+                  description: Indexador (none limpa a taxa).
+                rf_rate:
+                  type: number
+                  description: "Taxa (ex.: 110 = 110% do CDI; 6.2 = IPCA+6,2%)."
+  /v1/portfolios/{id}/transactions:
+    get:
+      responses:
+        "200":
+          description: Transações do ativo.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PortfolioTransaction"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                        description: "Sempre null: resposta em página única."
+                      count:
+                        type: integer
+                        description: Itens nesta página.
+                      asset:
+                        type: object
+                        description: Ativo do ledger (id, asset_type, symbol).
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: listPortfolioTransactions
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+        - name: entity_id
+          in: query
+          required: false
+          description: O objeto do grafo (`pub_…`); dispensa asset_type/symbol.
+          schema:
+            type: string
+        - name: asset_type
+          in: query
+          required: false
+          description: Tipo do ativo. Com symbol; dispensável com entity_id.
+          schema:
+            type: string
+        - name: symbol
+          in: query
+          required: false
+          description: Ticker ou nome do título.
+          schema:
+            type: string
+      x-capability: account
+      summary: Ledger de um ativo
+      description: Lista as transações (compras, vendas, splits, ajustes) de um ativo
+        da carteira, em ordem cronológica.
+    post:
+      responses:
+        "201":
+          description: Transação lançada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transaction:
+                    $ref: "#/components/schemas/PortfolioTransaction"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: addPortfolioTransaction
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+      x-capability: account
+      summary: Lançar transação
+      description: Lança uma transação na carteira real do dono da chave; ativo
+        ausente é adicionado automaticamente. buy/sell exigem `quantity`;
+        `price` é opcional; split usa `ratio` (2 = 2:1). Confirme os valores com
+        o usuário.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - kind
+                - trade_date
+              description: O ativo vem por `entity_id` OU por `asset_type` + `symbol`; entra
+                na carteira sozinho se ainda não estiver.
+              properties:
+                entity_id:
+                  type: string
+                  description: O objeto do grafo (`pub_…`). Dispensa asset_type/symbol.
+                asset_type:
+                  type: string
+                  enum:
+                    - stock
+                    - fii
+                    - etf
+                    - bdr
+                    - index
+                    - tesouro
+                    - crypto
+                    - option
+                    - renda_fixa
+                    - debenture
+                    - fund
+                    - us
+                  description: Tipo do ativo (com symbol; dispensável com entity_id).
+                symbol:
+                  type: string
+                  description: "Ticker (ex.: PETR4) ou nome oficial do título do Tesouro (com
+                    asset_type; dispensável com entity_id)."
+                kind:
+                  type: string
+                  enum:
+                    - buy
+                    - sell
+                    - split
+                  description: Tipo da transação.
+                trade_date:
+                  type: string
+                  description: Data do negócio (AAAA-MM-DD).
+                quantity:
+                  type: number
+                  description: Quantidade (> 0; obrigatória em buy/sell).
+                price:
+                  type: number
+                  description: Preço unitário em BRL (omita se desconhecido).
+                fees:
+                  type: number
+                  description: Custos/corretagem em BRL (default 0).
+                ratio:
+                  type: number
+                  description: Fator do split (2 = 2:1; 0.5 = grupamento 1:2).
+                note:
+                  type: string
+                  description: Observação livre (até 280 caracteres).
+  /v1/portfolios/{id}/transactions/{txId}:
+    patch:
+      responses:
+        "200":
+          description: Transação atualizada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioTransaction"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: updatePortfolioTransaction
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+        - name: txId
+          in: path
+          required: true
+          description: Id da transação (de listPortfolioTransactions).
+          schema:
+            type: string
+      x-capability: account
+      summary: Editar transação
+      description: "ALTERA uma transação existente da carteira REAL do dono da chave
+        (patch parcial: informe só os campos a mudar). Confirme com o usuário
+        antes de chamar."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - buy
+                    - sell
+                    - split
+                  description: Tipo da transação.
+                trade_date:
+                  type: string
+                  description: Data do negócio (AAAA-MM-DD).
+                quantity:
+                  type: number
+                  description: Quantidade.
+                price:
+                  type: number
+                  description: Preço unitário em BRL.
+                fees:
+                  type: number
+                  description: Custos em BRL.
+                ratio:
+                  type: number
+                  description: Fator do split.
+                note:
+                  type: string
+                  description: Observação.
+    delete:
+      responses:
+        "200":
+          description: Transação removida.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                  id:
+                    type: string
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: deletePortfolioTransaction
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+        - name: txId
+          in: path
+          required: true
+          description: Id da transação.
+          schema:
+            type: string
+      x-capability: account
+      summary: Remover transação
+      description: REMOVE uma transação do ledger da carteira REAL do dono da chave
+        (irreversível). Confirme com o usuário antes de chamar.
+  /v1/portfolios/{id}/imports:
+    post:
+      responses:
+        "201":
+          description: Resumo do import.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioImportSummary"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: importPortfolioFile
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+      x-capability: account
+      summary: Importar planilha (B3 ou template manual)
+      description: "Importa uma planilha para a carteira real do dono da chave:
+        Negociação ou Movimentação da B3 (.xlsx) ou o template manual
+        (.csv/.xlsx), com formato detectado automaticamente. Envie em
+        `content_base64` (máximo 8 MB). Idempotente: reenviar o mesmo arquivo
+        não duplica. A resposta resume importadas, duplicadas e ignoradas, com
+        avisos."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content_base64
+              properties:
+                content_base64:
+                  type: string
+                  description: Conteúdo do arquivo em base64.
+                filename:
+                  type: string
+                  description: Nome do arquivo (ajuda a trilha de auditoria).
+    get:
+      responses:
+        "200":
+          description: Imports da carteira.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PortfolioImportListItem"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                        description: "Sempre null: resposta em página única."
+                      count:
+                        type: integer
+                        description: Itens nesta página.
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: listPortfolioImports
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+      x-capability: account
+      summary: Histórico de imports
+      description: Lista os imports já feitos nesta carteira (arquivo, fonte, data e
+        resumo persistido).
+  /v1/portfolios/{id}/imports/{importId}/rows:
+    get:
+      responses:
+        "200":
+          description: Linhas do import.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PortfolioImportRow"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                        description: "Sempre null: resposta em página única."
+                      count:
+                        type: integer
+                        description: Itens nesta página.
+                      total:
+                        type: integer
+                        description: Linhas do import que casam o filtro, antes do recorte da página.
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: listPortfolioImportRows
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+        - name: importId
+          in: path
+          required: true
+          description: Id do import (de listPortfolioImports).
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          description: Filtra por status.
+          schema:
+            type: string
+            enum:
+              - imported
+              - ignored
+              - duplicate
+              - error
+        - name: limit
+          in: query
+          required: false
+          description: Linhas por página (1–500, default 100).
+          schema:
+            type: integer
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor opaco de meta.next_cursor — mesma paginação das demais
+            listagens.
+          schema:
+            type: string
+      x-capability: account
+      summary: Linhas de um import
+      description: "Drill-down de um import: cada linha do arquivo com status
+        (imported, ignored, duplicate, error) e motivo."
+  /v1/portfolios/{id}/reconcile:
+    post:
+      responses:
+        "200":
+          description: Resultado do ajuste (delta aplicado).
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: reconcilePortfolioAsset
+      tags:
+        - Carteira
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Id da carteira.
+          schema:
+            type: string
+      x-capability: account
+      summary: Reconciliar posição à B3
+      description: Ajusta a posição calculada de um ativo à quantidade declarada pela
+        B3 (`target_qty` em `as_of`) com um lançamento idempotente, para eventos
+        que não vieram no extrato. Confirme a quantidade com o usuário antes de
+        chamar.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - asset_type
+                - symbol
+                - target_qty
+                - as_of
+              properties:
+                asset_type:
+                  type: string
+                  description: Tipo do ativo.
+                symbol:
+                  type: string
+                  description: Ticker.
+                target_qty:
+                  type: number
+                  description: Quantidade declarada pela B3 (>= 0).
+                as_of:
+                  type: string
+                  description: Data de referência (AAAA-MM-DD).
+  /v1/suitability:
+    get:
+      responses:
+        "200":
+          description: Perfil de investidor do usuário (ou nulo).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuitabilityEnvelope"
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+      operationId: getSuitability
+      tags:
+        - Carteira
+      parameters: []
+      x-capability: account
+      summary: Seu perfil de investidor
+      description: "Retorna o perfil de investidor (suitability) do dono da chave:
+        nível (Conservador/Moderado/Arrojado), a posição na régua 0–100 (não é
+        uma nota) e as respostas do questionário. `profile` é nulo se o usuário
+        ainda não definiu o perfil."

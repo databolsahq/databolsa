@@ -1,0 +1,3361 @@
+openapi: 3.1.0
+info:
+  title: DataBolsa Advisor API
+  description: >-
+    Camada organizacional do DataBolsa para escritórios de assessoria,
+    consultorias e wealth managers:
+
+    organizações, membros e papéis, clientes e famílias, assessor responsável,
+    carteiras por cliente,
+
+    taxas e trilha de auditoria.
+
+
+    Convenções:
+
+    - Autenticação pela credencial pessoal do membro: sessão do portal, chave
+    pessoal ou token OAuth do conector.
+
+    - Todo recurso vive dentro de uma organização; recurso fora do seu escopo
+    responde 404.
+
+    - Licença vencida responde 402 (`code: license_required`) nas escritas;
+    leituras seguem abertas.
+
+    - Erros seguem RFC 9457 (`application/problem+json`).
+
+    - Toda escrita entra na trilha de auditoria da organização.
+  version: 3.12.0
+  contact:
+    name: DataBolsa
+servers:
+  - url: https://api.databolsa.com
+    description: Produção
+security:
+  - bearerApiKey: []
+components:
+  securitySchemes:
+    bearerApiKey:
+      type: http
+      scheme: bearer
+  schemas: {}
+tags:
+  - name: Advisor · Conta
+    description: Identidade do chamador e organizações acessíveis
+  - name: Advisor · Organização
+    description: Organização, membros, papéis, convites e licença
+  - name: Advisor · Clientes
+    description: Clientes, famílias, assessor responsável e perfil
+  - name: Advisor · Carteiras
+    description: Carteiras por cliente — ativos, ledger e posições
+  - name: Advisor · Taxas
+    description: Tabelas de taxas do escritório e vínculo por cliente
+  - name: Advisor · Auditoria
+    description: Trilha de auditoria da organização
+paths:
+  /v1/advisor/me:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  principal:
+                    type: string
+                    enum:
+                      - member
+                      - org_key
+                  user_id:
+                    type:
+                      - string
+                      - "null"
+                  email:
+                    type:
+                      - string
+                      - "null"
+                  name:
+                    type:
+                      - string
+                      - "null"
+                  organizations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        org_id:
+                          type: string
+                        org_slug:
+                          type: string
+                        org_name:
+                          type: string
+                        role:
+                          type: string
+                          enum:
+                            - owner
+                            - admin
+                            - advisor
+                            - viewer
+                        member_id:
+                          type: string
+                      required:
+                        - org_id
+                        - org_slug
+                        - org_name
+                        - role
+                        - member_id
+                required:
+                  - principal
+                  - user_id
+                  - email
+                  - name
+                  - organizations
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetMe
+      tags:
+        - Advisor · Conta
+      parameters: []
+      summary: Identidade do chamador e organizações acessíveis
+      description: Com credencial pessoal de membro, lista as organizações em que o
+        usuário tem assento. Com conta de serviço, retorna a própria organização
+        do token.
+  /v1/advisor/invitations/accept:
+    post:
+      responses:
+        "200":
+          description: Assento criado/reativado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  org_id:
+                    type: string
+                  org_slug:
+                    type: string
+                  member_id:
+                    type: string
+                  role:
+                    type: string
+                required:
+                  - org_id
+                  - org_slug
+                  - member_id
+                  - role
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorAcceptInvitation
+      tags:
+        - Advisor · Conta
+      parameters: []
+      summary: Aceitar convite de organização
+      description: Aceita um convite pendente pelo `token` do e-mail e cria o assento
+        do Advisor para a conta logada, com o papel do convite. O e-mail da
+        sessão precisa ser o do convite.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  minLength: 16
+                  description: Token do convite, do link recebido por e-mail.
+              required:
+                - token
+  /v1/advisor/orgs/{org}:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  slug:
+                    type: string
+                  name:
+                    type: string
+                  cnpj:
+                    type:
+                      - string
+                      - "null"
+                  cvm_registration:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  settings:
+                    type: object
+                    properties:
+                      client_visibility:
+                        type: string
+                        enum:
+                          - all
+                          - assigned
+                      seat_assignment:
+                        type: string
+                        enum:
+                          - automatic
+                          - manual
+                    required:
+                      - client_visibility
+                      - seat_assignment
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - slug
+                  - name
+                  - cnpj
+                  - cvm_registration
+                  - status
+                  - settings
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetOrganization
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Detalhe da organização
+      description: "Cadastro da organização: nome, slug, CNPJ, registro CVM, situação
+        e as configurações (`client_visibility`, `seat_assignment`)."
+    patch:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  slug:
+                    type: string
+                  name:
+                    type: string
+                  cnpj:
+                    type:
+                      - string
+                      - "null"
+                  cvm_registration:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  settings:
+                    type: object
+                    properties:
+                      client_visibility:
+                        type: string
+                        enum:
+                          - all
+                          - assigned
+                      seat_assignment:
+                        type: string
+                        enum:
+                          - automatic
+                          - manual
+                    required:
+                      - client_visibility
+                      - seat_assignment
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - slug
+                  - name
+                  - cnpj
+                  - cvm_registration
+                  - status
+                  - settings
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorUpdateOrganization
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Atualizar nome/configurações da organização
+      description: "Inclui `settings.client_visibility`: `all` (todos veem todos os
+        clientes) ou `assigned` (assessor/viewer só veem clientes atribuídos); e
+        `settings.seat_assignment`: `automatic` (todo membro da organização
+        ganha assento na primeira visita) ou `manual` (só dono/administrador da
+        organização entram sozinhos; os demais precisam de assento criado em
+        `POST /orgs/{org}/members`)."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  description: Novo nome da organização.
+                settings:
+                  type: object
+                  properties:
+                    client_visibility:
+                      type: string
+                      enum:
+                        - all
+                        - assigned
+                      description: all = todo membro vê todos os clientes; assigned = assessor e
+                        viewer só veem os clientes atribuídos.
+                    seat_assignment:
+                      type: string
+                      enum:
+                        - automatic
+                        - manual
+                      description: automatic = todo membro da organização ganha assento na primeira
+                        visita; manual = só dono/administrador entram sozinhos.
+                  description: Configurações; informe só as que mudam.
+  /v1/advisor/orgs/{org}/license:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plan:
+                    type:
+                      - string
+                      - "null"
+                  seats_limit:
+                    type: number
+                  clients_limit:
+                    type:
+                      - number
+                      - "null"
+                  expires_at:
+                    type:
+                      - string
+                      - "null"
+                  expired:
+                    type: boolean
+                required:
+                  - plan
+                  - seats_limit
+                  - clients_limit
+                  - expires_at
+                  - expired
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetLicense
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Licença e limites vigentes
+      description: "Plano vigente e os limites do contrato: assentos, clientes e
+        validade. `expired=true` bloqueia as escritas com 402
+        (`license_required`); as leituras seguem abertas."
+  /v1/advisor/orgs/{org}/members:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        user_id:
+                          type: string
+                        role:
+                          type: string
+                          enum:
+                            - owner
+                            - admin
+                            - advisor
+                            - viewer
+                        display_name:
+                          type:
+                            - string
+                            - "null"
+                        status:
+                          type: string
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - user_id
+                        - role
+                        - display_name
+                        - status
+                        - created_at
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorListMembers
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Membros da organização
+      description: "Assentos do Advisor na organização: membro, papel (owner, admin,
+        advisor, viewer), nome de exibição e situação."
+    post:
+      responses:
+        "200":
+          description: Assento criado ou reativado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  user_id:
+                    type: string
+                  role:
+                    type: string
+                    enum:
+                      - owner
+                      - admin
+                      - advisor
+                      - viewer
+                  display_name:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - user_id
+                  - role
+                  - display_name
+                  - status
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorAssignSeat
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Atribuir assento a um membro da organização
+      description: Cria (ou reativa) o assento do Advisor para uma pessoa que já é
+        membro da organização na plataforma, com o papel dado. É o caminho de
+        entrada quando `settings.seat_assignment` é `manual`; em `automatic`
+        serve para fixar o papel antes da primeira visita. Respeita o limite de
+        assentos do contrato (402 `license_required`).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  minLength: 1
+                  description: Id da pessoa na plataforma (já membro da organização).
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - admin
+                    - advisor
+                  description: "Papel do assento: owner, admin ou advisor."
+                display_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                  description: Nome de exibição no escritório (até 120 caracteres).
+              required:
+                - user_id
+                - role
+  /v1/advisor/orgs/{org}/members/{memberId}:
+    patch:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  user_id:
+                    type: string
+                  role:
+                    type: string
+                    enum:
+                      - owner
+                      - admin
+                      - advisor
+                      - viewer
+                  display_name:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - user_id
+                  - role
+                  - display_name
+                  - status
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorUpdateMember
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: memberId
+          required: true
+          description: Id do assento (de advisorListMembers).
+      summary: Atualizar papel/status de um membro
+      description: Muda o papel, o nome de exibição ou suspende/reativa o assento de
+        um membro. Não remove a pessoa da organização na plataforma.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - admin
+                    - advisor
+                  description: "Novo papel: owner, admin ou advisor."
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - suspended
+                  description: active reativa; suspended bloqueia o acesso sem apagar o assento.
+                display_name:
+                  type: string
+                  description: Novo nome de exibição.
+  /v1/advisor/orgs/{org}/invitations:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        email:
+                          type: string
+                        role:
+                          type: string
+                          enum:
+                            - owner
+                            - admin
+                            - advisor
+                            - viewer
+                        status:
+                          type: string
+                        expires_at:
+                          type: string
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - email
+                        - role
+                        - status
+                        - expires_at
+                        - created_at
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorListInvitations
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Convites da organização
+      description: Convites da organização com e-mail, papel, situação e validade.
+    post:
+      responses:
+        "200":
+          description: Convite criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invitation_id:
+                    type: string
+                  invite_url:
+                    type: string
+                required:
+                  - invitation_id
+                  - invite_url
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorCreateInvitation
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Convidar membro (e-mail + papel)
+      description: Cria um convite por e-mail com o papel dado e devolve o link de
+        aceite. O assento nasce quando a pessoa aceita
+        (`advisorAcceptInvitation`).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: E-mail de quem será convidado.
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - admin
+                    - advisor
+                  description: "Papel que a pessoa terá ao aceitar: owner, admin ou advisor."
+              required:
+                - email
+                - role
+  /v1/advisor/orgs/{org}/invitations/{invitationId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revoked:
+                    type: boolean
+                required:
+                  - revoked
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorRevokeInvitation
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: invitationId
+          required: true
+          description: Id do convite (de advisorListInvitations).
+      summary: Revogar convite pendente
+      description: Cancela um convite ainda não aceito.
+  /v1/advisor/orgs/{org}/overview:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  aum_total:
+                    type:
+                      - number
+                      - "null"
+                  clients:
+                    type: object
+                    properties:
+                      total:
+                        type: number
+                      prospect:
+                        type: number
+                      active:
+                        type: number
+                    required:
+                      - total
+                      - prospect
+                      - active
+                  by_class:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset_type:
+                          type: string
+                        market_value:
+                          type: number
+                      required:
+                        - asset_type
+                        - market_value
+                  by_advisor:
+                    type:
+                      - array
+                      - "null"
+                    items:
+                      type: object
+                      properties:
+                        member_id:
+                          type:
+                            - string
+                            - "null"
+                        display_name:
+                          type:
+                            - string
+                            - "null"
+                        clients:
+                          type: number
+                        aum:
+                          type:
+                            - number
+                            - "null"
+                      required:
+                        - member_id
+                        - display_name
+                        - clients
+                        - aum
+                  by_client:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        client_id:
+                          type: string
+                        name:
+                          type: string
+                        status:
+                          type: string
+                        owner_member_id:
+                          type:
+                            - string
+                            - "null"
+                        owner_display_name:
+                          type:
+                            - string
+                            - "null"
+                        aum:
+                          type:
+                            - number
+                            - "null"
+                        portfolios:
+                          type: number
+                      required:
+                        - client_id
+                        - name
+                        - status
+                        - owner_member_id
+                        - owner_display_name
+                        - aum
+                        - portfolios
+                  recent_activity:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        action:
+                          type: string
+                        summary:
+                          type:
+                            - string
+                            - "null"
+                        via:
+                          type: string
+                        actor_member_id:
+                          type:
+                            - string
+                            - "null"
+                        actor_display_name:
+                          type:
+                            - string
+                            - "null"
+                        entity_type:
+                          type:
+                            - string
+                            - "null"
+                        entity_id:
+                          type:
+                            - string
+                            - "null"
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - action
+                        - summary
+                        - via
+                        - actor_member_id
+                        - actor_display_name
+                        - entity_type
+                        - entity_id
+                        - created_at
+                required:
+                  - aum_total
+                  - clients
+                  - by_class
+                  - by_advisor
+                  - by_client
+                  - recent_activity
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetOverview
+      tags:
+        - Advisor · Organização
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Visão geral da organização (agregados)
+      description: "AUM total, clientes, alocação por classe, quebra por assessor
+        (owner/admin) e atividade recente. O escopo é aplicado no servidor:
+        assessor com visibilidade `assigned` recebe o agregado apenas dos
+        clientes atribuídos a ele. Carteiras `proposal` nunca entram nos
+        agregados."
+  /v1/advisor/orgs/{org}/audit:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        action:
+                          type: string
+                        summary:
+                          type:
+                            - string
+                            - "null"
+                        via:
+                          type: string
+                        actor_member_id:
+                          type:
+                            - string
+                            - "null"
+                        actor_display_name:
+                          type:
+                            - string
+                            - "null"
+                        entity_type:
+                          type:
+                            - string
+                            - "null"
+                        entity_id:
+                          type:
+                            - string
+                            - "null"
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - action
+                        - summary
+                        - via
+                        - actor_member_id
+                        - actor_display_name
+                        - entity_type
+                        - entity_id
+                        - created_at
+                  next_cursor:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - data
+                  - next_cursor
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorListAuditLog
+      tags:
+        - Advisor · Auditoria
+      parameters:
+        - in: query
+          name: client_id
+          schema:
+            type: string
+            description: Recorta pelo cliente e pelas carteiras dele.
+        - in: query
+          name: cursor
+          schema:
+            type: string
+            description: Cursor opaco de `next_cursor` da página anterior.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            description: Eventos por página (1–200).
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Trilha de auditoria (paginada)
+      description: Eventos da organização em ordem decrescente, com keyset pagination
+        (`cursor` opaco). `client_id` filtra o cliente e suas carteiras.
+        Assessor com visibilidade `assigned` vê apenas eventos dos clientes
+        atribuídos.
+  /v1/advisor/orgs/{org}/families:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        note:
+                          type:
+                            - string
+                            - "null"
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - name
+                        - note
+                        - created_at
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorListFamilies
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Famílias da organização
+      description: "Famílias da organização: agrupamentos de clientes (núcleo
+        familiar, holding) para leitura consolidada."
+    post:
+      responses:
+        "200":
+          description: Família criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  note:
+                    type:
+                      - string
+                      - "null"
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - note
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorCreateFamily
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Criar família (agrupamento de clientes)
+      description: Cria uma família (agrupamento de clientes) com nome e observação
+        opcional.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  description: Nome da família (mín. 2 caracteres).
+                note:
+                  type: string
+                  description: Observação livre.
+              required:
+                - name
+  /v1/advisor/orgs/{org}/clients:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        kind:
+                          type: string
+                          enum:
+                            - person
+                            - entity
+                        name:
+                          type: string
+                        email:
+                          type:
+                            - string
+                            - "null"
+                        phone:
+                          type:
+                            - string
+                            - "null"
+                        document_id:
+                          type:
+                            - string
+                            - "null"
+                        family_id:
+                          type:
+                            - string
+                            - "null"
+                        status:
+                          type: string
+                          enum:
+                            - prospect
+                            - active
+                            - inactive
+                            - offboarded
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - kind
+                        - name
+                        - email
+                        - phone
+                        - document_id
+                        - family_id
+                        - status
+                        - created_at
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorListClients
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Clientes visíveis ao chamador
+      description: Com `settings.client_visibility = assigned`, assessor/viewer só
+        veem clientes atribuídos a eles.
+    post:
+      responses:
+        "200":
+          description: Cliente criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  kind:
+                    type: string
+                    enum:
+                      - person
+                      - entity
+                  name:
+                    type: string
+                  email:
+                    type:
+                      - string
+                      - "null"
+                  phone:
+                    type:
+                      - string
+                      - "null"
+                  document_id:
+                    type:
+                      - string
+                      - "null"
+                  family_id:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                    enum:
+                      - prospect
+                      - active
+                      - inactive
+                      - offboarded
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - kind
+                  - name
+                  - email
+                  - phone
+                  - document_id
+                  - family_id
+                  - status
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorCreateClient
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+      summary: Cadastrar cliente
+      description: "Cadastra um cliente do escritório (pessoa ou entidade) com
+        contato, documento, família, situação inicial e assessor responsável.
+        Escrita: entra na trilha de auditoria e exige licença vigente."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  description: Nome do cliente (mín. 2 caracteres).
+                kind:
+                  type: string
+                  enum:
+                    - person
+                    - entity
+                  description: person = pessoa física (default); entity = pessoa jurídica.
+                email:
+                  type:
+                    - string
+                    - "null"
+                  format: email
+                  description: E-mail de contato.
+                phone:
+                  type:
+                    - string
+                    - "null"
+                  description: Telefone de contato.
+                document_id:
+                  type:
+                    - string
+                    - "null"
+                  description: CPF ou CNPJ, só dígitos.
+                family_id:
+                  type:
+                    - string
+                    - "null"
+                  description: Família a que pertence (de advisorListFamilies).
+                status:
+                  type: string
+                  enum:
+                    - prospect
+                    - active
+                  description: "Situação inicial: prospect ou active (default active)."
+                owner_member_id:
+                  type:
+                    - string
+                    - "null"
+                  description: Assento do assessor responsável (de advisorListMembers).
+              required:
+                - name
+  /v1/advisor/orgs/{org}/clients/{clientId}:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  client:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      kind:
+                        type: string
+                        enum:
+                          - person
+                          - entity
+                      name:
+                        type: string
+                      email:
+                        type:
+                          - string
+                          - "null"
+                      phone:
+                        type:
+                          - string
+                          - "null"
+                      document_id:
+                        type:
+                          - string
+                          - "null"
+                      family_id:
+                        type:
+                          - string
+                          - "null"
+                      status:
+                        type: string
+                        enum:
+                          - prospect
+                          - active
+                          - inactive
+                          - offboarded
+                      created_at:
+                        type: string
+                    required:
+                      - id
+                      - kind
+                      - name
+                      - email
+                      - phone
+                      - document_id
+                      - family_id
+                      - status
+                      - created_at
+                  profile:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      objectives:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            kind:
+                              type: string
+                            description:
+                              type: string
+                            target_amount_cents:
+                              type: integer
+                            target_date:
+                              type: string
+                          required:
+                            - kind
+                      restrictions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            kind:
+                              type: string
+                              enum:
+                                - no_asset
+                                - no_class
+                                - max_allocation
+                                - liquidity
+                                - other
+                            symbol:
+                              type: string
+                            asset_class:
+                              type: string
+                            max_pct:
+                              type: number
+                            description:
+                              type: string
+                          required:
+                            - kind
+                      risk_profile:
+                        type:
+                          - string
+                          - "null"
+                      suitability:
+                        type: "null"
+                      horizon:
+                        type:
+                          - string
+                          - "null"
+                      notes:
+                        type:
+                          - string
+                          - "null"
+                      updated_at:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - objectives
+                      - restrictions
+                      - risk_profile
+                      - horizon
+                      - notes
+                      - updated_at
+                  assignments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        member_id:
+                          type: string
+                        member_display_name:
+                          type:
+                            - string
+                            - "null"
+                        role:
+                          type: string
+                      required:
+                        - member_id
+                        - member_display_name
+                        - role
+                required:
+                  - client
+                  - profile
+                  - assignments
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetClient
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+          description: Id do cliente (de advisorListClients).
+      summary: Detalhe do cliente (cadastro + perfil + responsável)
+      description: "Ficha completa do cliente: cadastro, perfil (objetivos,
+        restrições, risco, horizonte, notas) e os assessores responsáveis."
+    patch:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  kind:
+                    type: string
+                    enum:
+                      - person
+                      - entity
+                  name:
+                    type: string
+                  email:
+                    type:
+                      - string
+                      - "null"
+                  phone:
+                    type:
+                      - string
+                      - "null"
+                  document_id:
+                    type:
+                      - string
+                      - "null"
+                  family_id:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                    enum:
+                      - prospect
+                      - active
+                      - inactive
+                      - offboarded
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - kind
+                  - name
+                  - email
+                  - phone
+                  - document_id
+                  - family_id
+                  - status
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorUpdateClient
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+          description: Id do cliente (de advisorListClients).
+      summary: Atualizar cadastro/status do cliente
+      description: "Altera o cadastro ou a situação do cliente (patch parcial).
+        `status: offboarded` encerra a relação preservando o histórico."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  description: Novo nome.
+                kind:
+                  type: string
+                  enum:
+                    - person
+                    - entity
+                  description: person ou entity.
+                email:
+                  type:
+                    - string
+                    - "null"
+                  format: email
+                  description: E-mail de contato; null limpa.
+                phone:
+                  type:
+                    - string
+                    - "null"
+                  description: Telefone; null limpa.
+                document_id:
+                  type:
+                    - string
+                    - "null"
+                  description: CPF ou CNPJ, só dígitos; null limpa.
+                family_id:
+                  type:
+                    - string
+                    - "null"
+                  description: Família; null desvincula.
+                status:
+                  type: string
+                  enum:
+                    - prospect
+                    - active
+                    - inactive
+                    - offboarded
+                  description: prospect, active, inactive ou offboarded (encerra a relação
+                    preservando o histórico).
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorDeleteClient
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+          description: Id do cliente (de advisorListClients).
+      summary: Excluir cliente (remoção real, com carteiras e perfil)
+      description: "Correção de cadastro errado. Para fim de relação, prefira `PATCH
+        status: offboarded` (arquiva preservando histórico)."
+  /v1/advisor/orgs/{org}/clients/{clientId}/assignment:
+    put:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: boolean
+                required:
+                  - updated
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorSetClientAssignment
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+          description: Id do cliente (de advisorListClients).
+      summary: Definir assessor responsável
+      description: Define o assessor responsável pelo cliente (`member_id`). Com
+        `client_visibility=assigned`, é isso que decide quem enxerga o cliente.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                member_id:
+                  type: string
+                  description: Assento do assessor responsável (de advisorListMembers).
+              required:
+                - member_id
+  /v1/advisor/orgs/{org}/clients/{clientId}/profile:
+    put:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  objectives:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        kind:
+                          type: string
+                        description:
+                          type: string
+                        target_amount_cents:
+                          type: integer
+                        target_date:
+                          type: string
+                      required:
+                        - kind
+                  restrictions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        kind:
+                          type: string
+                          enum:
+                            - no_asset
+                            - no_class
+                            - max_allocation
+                            - liquidity
+                            - other
+                        symbol:
+                          type: string
+                        asset_class:
+                          type: string
+                        max_pct:
+                          type: number
+                        description:
+                          type: string
+                      required:
+                        - kind
+                  risk_profile:
+                    type:
+                      - string
+                      - "null"
+                  suitability:
+                    type: "null"
+                  horizon:
+                    type:
+                      - string
+                      - "null"
+                  notes:
+                    type:
+                      - string
+                      - "null"
+                  updated_at:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - objectives
+                  - restrictions
+                  - risk_profile
+                  - horizon
+                  - notes
+                  - updated_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorUpdateClientProfile
+      tags:
+        - Advisor · Clientes
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+          description: Id do cliente (de advisorListClients).
+      summary: Atualizar objetivos/restrições/contexto do cliente
+      description: O perfil é o contexto que agente, MCP e relatórios leem. Histórico
+        via trilha de auditoria.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                objectives:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      kind:
+                        type: string
+                      description:
+                        type: string
+                      target_amount_cents:
+                        type: integer
+                      target_date:
+                        type: string
+                    required:
+                      - kind
+                  description: Objetivos (kind, descrição, valor-alvo em centavos, data-alvo).
+                    Substitui a lista inteira.
+                restrictions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      kind:
+                        type: string
+                        enum:
+                          - no_asset
+                          - no_class
+                          - max_allocation
+                          - liquidity
+                          - other
+                      symbol:
+                        type: string
+                      asset_class:
+                        type: string
+                      max_pct:
+                        type: number
+                      description:
+                        type: string
+                    required:
+                      - kind
+                  description: Restrições (no_asset, no_class, max_allocation, liquidity, other)
+                    com símbolo, classe ou teto em %. Substitui a lista inteira.
+                risk_profile:
+                  type:
+                    - string
+                    - "null"
+                  description: Perfil de risco em texto livre (conservador, moderado, arrojado…).
+                suitability:
+                  description: Questionário de suitability como o escritório o registra (JSON
+                    livre).
+                horizon:
+                  type:
+                    - string
+                    - "null"
+                  description: "Horizonte de investimento, em texto (ex.: 5 anos)."
+                notes:
+                  type:
+                    - string
+                    - "null"
+                  description: Contexto livre que agente e relatórios leem.
+  /v1/advisor/orgs/{org}/clients/{clientId}/portfolios:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        client_id:
+                          type: string
+                        name:
+                          type: string
+                        kind:
+                          type: string
+                          enum:
+                            - actual
+                            - proposal
+                        base_currency:
+                          type: string
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - client_id
+                        - name
+                        - kind
+                        - base_currency
+                        - created_at
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorListClientPortfolios
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+          description: Id do cliente (de advisorListClients).
+      summary: Carteiras de um cliente
+      description: "Carteiras do cliente: id, nome, tipo (`actual` = real, `proposal`
+        = estudo fora do consolidado) e moeda base."
+    post:
+      responses:
+        "200":
+          description: Carteira criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  client_id:
+                    type: string
+                  name:
+                    type: string
+                  kind:
+                    type: string
+                    enum:
+                      - actual
+                      - proposal
+                  base_currency:
+                    type: string
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - client_id
+                  - name
+                  - kind
+                  - base_currency
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorCreateClientPortfolio
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+          description: Id do cliente (de advisorListClients).
+      summary: Criar carteira para um cliente
+      description: "`kind: proposal` marca estudo/realocação — fica fora do
+        consolidado do cliente."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  description: Nome da carteira.
+                kind:
+                  type: string
+                  enum:
+                    - actual
+                    - proposal
+                  description: actual = carteira real (default); proposal = estudo ou realocação,
+                    fora do consolidado do cliente.
+                base_currency:
+                  type: string
+                  description: Moeda base (default BRL).
+              required:
+                - name
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portfolio:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      client_id:
+                        type: string
+                      name:
+                        type: string
+                      kind:
+                        type: string
+                        enum:
+                          - actual
+                          - proposal
+                      base_currency:
+                        type: string
+                      created_at:
+                        type: string
+                    required:
+                      - id
+                      - client_id
+                      - name
+                      - kind
+                      - base_currency
+                      - created_at
+                  holdings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset_type:
+                          type: string
+                        symbol:
+                          type: string
+                        name:
+                          type: string
+                        qty:
+                          type: number
+                        avg:
+                          type:
+                            - number
+                            - "null"
+                        invested_cost:
+                          type:
+                            - number
+                            - "null"
+                        cost_basis_known:
+                          type: boolean
+                        price:
+                          type:
+                            - number
+                            - "null"
+                        change_pct:
+                          type:
+                            - number
+                            - "null"
+                        market_value:
+                          type:
+                            - number
+                            - "null"
+                        unrealized_pl:
+                          type:
+                            - number
+                            - "null"
+                        unrealized_pct:
+                          type:
+                            - number
+                            - "null"
+                        tx_count:
+                          type: number
+                      required:
+                        - asset_type
+                        - symbol
+                        - name
+                        - qty
+                        - avg
+                        - invested_cost
+                        - cost_basis_known
+                        - price
+                        - change_pct
+                        - market_value
+                        - unrealized_pl
+                        - unrealized_pct
+                        - tx_count
+                  totals:
+                    type: object
+                    properties:
+                      market_value:
+                        type:
+                          - number
+                          - "null"
+                      invested_cost:
+                        type:
+                          - number
+                          - "null"
+                      unrealized_pl:
+                        type:
+                          - number
+                          - "null"
+                      invested_cost_priced:
+                        type:
+                          - number
+                          - "null"
+                      unpriced_holdings:
+                        type: number
+                    required:
+                      - market_value
+                      - invested_cost
+                      - unrealized_pl
+                      - invested_cost_priced
+                      - unpriced_holdings
+                required:
+                  - portfolio
+                  - holdings
+                  - totals
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetClientPortfolio
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+      summary: Posições e valorização da carteira
+      description: Posição derivada do ledger no motor de cálculo; cotações do
+        DataBolsa Core.
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorDeleteClientPortfolio
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+      summary: Remover carteira
+      description: Remove a carteira com todo o ledger dela (irreversível). Confirme
+        com a pessoa antes de chamar.
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/history:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  points:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: string
+                        patrimonio:
+                          type: number
+                        aporte:
+                          type: number
+                        proventos:
+                          type: number
+                        realizado:
+                          type: number
+                      required:
+                        - month
+                        - patrimonio
+                        - aporte
+                        - proventos
+                        - realizado
+                  twr:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      cumulative:
+                        type: number
+                      annualized:
+                        type:
+                          - number
+                          - "null"
+                      months:
+                        type: number
+                    required:
+                      - cumulative
+                      - annualized
+                      - months
+                  xirr:
+                    type:
+                      - number
+                      - "null"
+                  returns_explain:
+                    type: string
+                required:
+                  - points
+                  - twr
+                  - xirr
+                  - returns_explain
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetClientPortfolioHistory
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+      summary: Evolução mensal e retornos da carteira
+      description: Curva mensal de patrimônio × aporte derivada do ledger (mesmo motor
+        do DataBolsa), com TWR e XIRR. Renda fixa entra pelo custo remanescente.
+  /v1/advisor/orgs/{org}/clients/{clientId}/history:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  points:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: string
+                        patrimonio:
+                          type: number
+                        aporte:
+                          type: number
+                        proventos:
+                          type: number
+                        realizado:
+                          type: number
+                      required:
+                        - month
+                        - patrimonio
+                        - aporte
+                        - proventos
+                        - realizado
+                  twr:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      cumulative:
+                        type: number
+                      annualized:
+                        type:
+                          - number
+                          - "null"
+                      months:
+                        type: number
+                    required:
+                      - cumulative
+                      - annualized
+                      - months
+                  xirr:
+                    type:
+                      - number
+                      - "null"
+                  returns_explain:
+                    type: string
+                required:
+                  - points
+                  - twr
+                  - xirr
+                  - returns_explain
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetClientHistory
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: clientId
+          required: true
+          description: Id do cliente (de advisorListClients).
+      summary: Evolução mensal e retornos consolidados do cliente
+      description: Consolida as carteiras reais do cliente (propostas ficam fora), com
+        TWR e XIRR.
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/ledger:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        asset:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            asset_type:
+                              type: string
+                            symbol:
+                              type: string
+                            note:
+                              type:
+                                - string
+                                - "null"
+                          required:
+                            - id
+                            - asset_type
+                            - symbol
+                            - note
+                        transactions:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              kind:
+                                type: string
+                              trade_date:
+                                type: string
+                              quantity:
+                                type: number
+                              price:
+                                type:
+                                  - number
+                                  - "null"
+                              fees:
+                                type: number
+                              ratio:
+                                type:
+                                  - number
+                                  - "null"
+                              note:
+                                type:
+                                  - string
+                                  - "null"
+                              external_id:
+                                type:
+                                  - string
+                                  - "null"
+                            required:
+                              - id
+                              - kind
+                              - trade_date
+                              - quantity
+                              - price
+                              - fees
+                              - ratio
+                              - note
+                              - external_id
+                      required:
+                        - asset
+                        - transactions
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorGetClientPortfolioLedger
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+      summary: Ativos e lançamentos (ledger) da carteira
+      description: "Ativos da carteira, cada um com o ledger completo de lançamentos
+        (compra, venda, split): é a fonte da posição que
+        `advisorGetClientPortfolio` calcula."
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/import:
+    post:
+      responses:
+        "200":
+          description: Resumo do import
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source:
+                    type: string
+                    enum:
+                      - negociacao
+                      - movimentacao
+                      - manual
+                  parsed:
+                    type: number
+                  imported:
+                    type: number
+                  duplicates_skipped:
+                    type: number
+                  symbols:
+                    type: array
+                    items:
+                      type: string
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                  period:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      from:
+                        type:
+                          - string
+                          - "null"
+                      to:
+                        type:
+                          - string
+                          - "null"
+                    required:
+                      - from
+                      - to
+                required:
+                  - source
+                  - parsed
+                  - imported
+                  - duplicates_skipped
+                  - symbols
+                  - warnings
+                  - period
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorImportClientPortfolioFile
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+      summary: Importar planilha no ledger da carteira
+      description: Multipart com campo `file` (.xlsx ou .csv). Auto-detecta
+        Negociação/Movimentação da B3 e o template manual; idempotente por linha
+        (reimportar não duplica).
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/assets:
+    post:
+      responses:
+        "200":
+          description: Ativo adicionado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  asset_type:
+                    type: string
+                  symbol:
+                    type: string
+                  note:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - id
+                  - asset_type
+                  - symbol
+                  - note
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorAddClientPortfolioAsset
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+      summary: Adicionar ativo à carteira
+      description: "Adiciona um ativo à carteira do cliente sem lançamentos (funciona
+        como watchlist até o primeiro). `asset_type` e `symbol` seguem o
+        vocabulário da Wallet: acao/PETR4, fii/HGLG11, tesouro/nome oficial do
+        título, fund/CNPJ da classe."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                asset_type:
+                  type: string
+                  minLength: 2
+                  description: "Tipo do ativo: acao, fii, etf, bdr, tesouro, renda_fixa,
+                    debenture, fund, us, crypto."
+                symbol:
+                  type: string
+                  minLength: 1
+                  description: Ticker (PETR4), nome oficial do título do Tesouro, código do papel
+                    (ELTN17) ou CNPJ da classe do fundo.
+                note:
+                  type:
+                    - string
+                    - "null"
+                  description: Observação livre.
+                meta:
+                  description: Metadados livres do escritório (JSON).
+              required:
+                - asset_type
+                - symbol
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/assets/{assetId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorRemoveClientPortfolioAsset
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+        - schema:
+            type: string
+          in: path
+          name: assetId
+          required: true
+          description: Id do ativo na carteira (de advisorGetClientPortfolioLedger).
+      summary: Remover ativo (e seu ledger) da carteira
+      description: Remove o ativo e apaga o ledger dele nesta carteira (irreversível).
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/assets/{assetId}/transactions:
+    post:
+      responses:
+        "200":
+          description: Lançamento criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  kind:
+                    type: string
+                  trade_date:
+                    type: string
+                  quantity:
+                    type: number
+                  price:
+                    type:
+                      - number
+                      - "null"
+                  fees:
+                    type: number
+                  ratio:
+                    type:
+                      - number
+                      - "null"
+                  note:
+                    type:
+                      - string
+                      - "null"
+                  external_id:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - id
+                  - kind
+                  - trade_date
+                  - quantity
+                  - price
+                  - fees
+                  - ratio
+                  - note
+                  - external_id
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorAddClientPortfolioTransaction
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+        - schema:
+            type: string
+          in: path
+          name: assetId
+          required: true
+          description: Id do ativo na carteira (de advisorGetClientPortfolioLedger).
+      summary: Lançar transação no ledger do ativo
+      description: Lança compra, venda ou split no ledger do ativo. `buy`/`sell`
+        exigem `quantity` (e `price` quando conhecido); `split` usa `ratio` (2 =
+        2:1). `external_id` torna o lançamento idempotente.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - buy
+                    - sell
+                    - split
+                  description: buy, sell ou split.
+                trade_date:
+                  type: string
+                  pattern: ^\d{4}-\d{2}-\d{2}$
+                  description: Data do negócio (AAAA-MM-DD).
+                quantity:
+                  type: number
+                  description: Quantidade (> 0).
+                price:
+                  type:
+                    - number
+                    - "null"
+                  description: Preço unitário na moeda da carteira; omita se desconhecido.
+                fees:
+                  type: number
+                  description: Custos e corretagem (default 0).
+                ratio:
+                  type:
+                    - number
+                    - "null"
+                  description: Fator do split (2 = 2:1; 0.5 = grupamento 1:2).
+                note:
+                  type:
+                    - string
+                    - "null"
+                  description: Observação livre.
+                external_id:
+                  type:
+                    - string
+                    - "null"
+                  description: Id externo do lançamento; repetir o mesmo id não duplica.
+              required:
+                - kind
+                - trade_date
+                - quantity
+  /v1/advisor/orgs/{org}/portfolios/{portfolioId}/transactions/{txId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: advisorDeleteClientPortfolioTransaction
+      tags:
+        - Advisor · Carteiras
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de advisorGetMe).
+        - schema:
+            type: string
+          in: path
+          name: portfolioId
+          required: true
+          description: Id da carteira do cliente (de advisorListClientPortfolios).
+        - schema:
+            type: string
+          in: path
+          name: txId
+          required: true
+          description: Id do lançamento (de advisorGetClientPortfolioLedger).
+      summary: Remover lançamento do ledger
+      description: Remove um lançamento do ledger (irreversível); a posição é recalculada.

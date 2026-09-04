@@ -1,0 +1,3059 @@
+openapi: 3.1.0
+info:
+  title: DataBolsa Credit Desk API
+  description: >-
+    Camada de trabalho do DataBolsa para mesas de crédito privado: watchlists de
+    classes de FIDC,
+
+    grade de acompanhamento, notas, alertas e limiares extraídos de regulamento.
+
+
+    Convenções:
+
+    - Autenticação por credencial pessoal de membro (sessão ou chave
+    `db_live_`).
+
+    - Todo recurso vive dentro de uma mesa; recurso fora do seu escopo responde
+    404.
+
+    - Licença vencida responde 402 (`code: license_required`) nas escritas;
+    leituras seguem abertas.
+
+    - Razões (inadimplência, alavancagem) viajam como FRAÇÃO (0,0445 = 4,45%);
+    participação de
+      cedente viaja como PERCENTUAL (90 = 90%), preservando a unidade da fonte.
+    - Ausência de dado é `null`, nunca zero.
+
+    - Erros seguem RFC 9457 (`application/problem+json`).
+
+    - Toda escrita entra na trilha de auditoria da mesa.
+  version: 3.12.0
+  contact:
+    name: DataBolsa
+servers:
+  - url: https://api.databolsa.com
+    description: Produção
+security:
+  - bearerApiKey: []
+components:
+  securitySchemes:
+    bearerApiKey:
+      type: http
+      scheme: bearer
+  schemas: {}
+tags:
+  - name: Desk · Conta
+    description: Identidade do chamador e mesas acessíveis
+  - name: Desk · Mesa
+    description: Mesa, membros, papéis, convites, licença e auditoria
+  - name: Desk · Watchlist
+    description: Listas de acompanhamento e o quadro com dados do informe
+  - name: Desk · Alertas
+    description: Regras da mesa e alertas derivados do informe e do regulamento
+  - name: Desk · Notas
+    description: Notas da mesa sobre classes e cedentes
+  - name: Desk · Regulamento
+    description: Limiares extraídos do regulamento, com procedência e vigência
+paths:
+  /v1/desk/me:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type:
+                      - string
+                      - "null"
+                  email:
+                    type:
+                      - string
+                      - "null"
+                  name:
+                    type:
+                      - string
+                      - "null"
+                  organizations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        org_id:
+                          type: string
+                        org_slug:
+                          type: string
+                        org_name:
+                          type: string
+                        role:
+                          type: string
+                          enum:
+                            - owner
+                            - admin
+                            - analyst
+                            - viewer
+                        member_id:
+                          type: string
+                      required:
+                        - org_id
+                        - org_slug
+                        - org_name
+                        - role
+                        - member_id
+                required:
+                  - user_id
+                  - email
+                  - name
+                  - organizations
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskGetMe
+      tags:
+        - Desk · Conta
+      parameters: []
+      summary: Identidade do chamador e mesas acessíveis
+      description: Identidade do chamador e as mesas em que tem assento, com o papel
+        em cada uma.
+  /v1/desk/invitations/accept:
+    post:
+      responses:
+        "200":
+          description: Assento criado ou reativado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  org_id:
+                    type: string
+                  org_slug:
+                    type: string
+                  member_id:
+                    type: string
+                  role:
+                    type: string
+                required:
+                  - org_id
+                  - org_slug
+                  - member_id
+                  - role
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskAcceptInvitation
+      tags:
+        - Desk · Conta
+      parameters: []
+      summary: Aceitar convite de mesa
+      description: "O assento é vinculado à conta logada. O e-mail da sessão precisa
+        ser o mesmo do convite; divergência responde 403 com `code:
+        invite_email_mismatch`."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  minLength: 16
+                  description: Token do convite, do link recebido por e-mail.
+              required:
+                - token
+  /v1/desk/orgs/{org}:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  slug:
+                    type: string
+                  name:
+                    type: string
+                  cnpj:
+                    type:
+                      - string
+                      - "null"
+                  cvm_registration:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                required:
+                  - id
+                  - slug
+                  - name
+                  - cnpj
+                  - cvm_registration
+                  - status
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskGetOrganization
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Perfil da mesa
+      description: "Cadastro da mesa: nome, slug, CNPJ, registro CVM e situação."
+    patch:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  slug:
+                    type: string
+                  name:
+                    type: string
+                  cnpj:
+                    type:
+                      - string
+                      - "null"
+                  cvm_registration:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                required:
+                  - id
+                  - slug
+                  - name
+                  - cnpj
+                  - cvm_registration
+                  - status
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskUpdateOrganization
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Atualizar a mesa
+      description: "Altera o nome e as configurações da mesa
+        (`settings.seatAssignment`: automatic ou manual)."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  description: Novo nome da mesa.
+                settings:
+                  type: object
+                  additionalProperties: {}
+                  description: "Configurações da mesa; `seatAssignment`: automatic ou manual."
+  /v1/desk/orgs/{org}/license:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plan:
+                    type:
+                      - string
+                      - "null"
+                  seats_limit:
+                    type: number
+                  watched_limit:
+                    type:
+                      - number
+                      - "null"
+                  expires_at:
+                    type:
+                      - string
+                      - "null"
+                  expired:
+                    type: boolean
+                required:
+                  - plan
+                  - seats_limit
+                  - watched_limit
+                  - expires_at
+                  - expired
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskGetLicense
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Licença da mesa
+      description: "Plano vigente e os limites do contrato: assentos, classes
+        acompanhadas e validade. `expired=true` bloqueia as escritas com 402
+        (`license_required`); as leituras seguem abertas."
+  /v1/desk/orgs/{org}/members:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        role:
+                          type: string
+                        display_name:
+                          type:
+                            - string
+                            - "null"
+                        status:
+                          type: string
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - role
+                        - display_name
+                        - status
+                        - created_at
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListMembers
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Membros da mesa
+      description: "Assentos da mesa: papel (owner, admin, analyst, viewer), nome de
+        exibição e situação."
+    post:
+      responses:
+        "200":
+          description: Assento criado ou reativado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  role:
+                    type: string
+                  display_name:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - role
+                  - display_name
+                  - status
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskAssignSeat
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Atribuir assento a um membro da organização
+      description: Cria (ou reativa) o assento da mesa para uma pessoa que já é membro
+        da organização na plataforma, com o papel dado. É o caminho de entrada
+        quando `settings.seatAssignment` é `manual`; em `automatic` serve para
+        fixar o papel antes da primeira visita. Respeita o limite de assentos do
+        contrato (402 `license_required`).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  minLength: 1
+                  description: Id da pessoa na plataforma (já membro da organização).
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - admin
+                    - analyst
+                  description: Papel do assento.
+                display_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                  description: Nome de exibição na mesa (até 120 caracteres).
+              required:
+                - user_id
+                - role
+  /v1/desk/orgs/{org}/members/{memberId}:
+    patch:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  role:
+                    type: string
+                  display_name:
+                    type:
+                      - string
+                      - "null"
+                  status:
+                    type: string
+                  created_at:
+                    type: string
+                required:
+                  - id
+                  - role
+                  - display_name
+                  - status
+                  - created_at
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskUpdateMember
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: memberId
+          required: true
+          description: Id do assento (de deskListMembers).
+      summary: Alterar papel ou status de um membro
+      description: Muda o papel, o nome de exibição ou suspende/reativa um assento.
+        Não remove a pessoa da organização na plataforma.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - admin
+                    - analyst
+                  description: Novo papel do assento.
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - suspended
+                  description: active reativa; suspended bloqueia o acesso sem apagar o assento.
+                display_name:
+                  type: string
+                  description: Novo nome de exibição.
+  /v1/desk/orgs/{org}/invitations:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        email:
+                          type: string
+                        role:
+                          type: string
+                        status:
+                          type: string
+                        expires_at:
+                          type: string
+                      required:
+                        - id
+                        - email
+                        - role
+                        - status
+                        - expires_at
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListInvitations
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Convites da mesa
+      description: Convites da mesa com e-mail, papel, situação e validade.
+    post:
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invitation_id:
+                    type: string
+                  invite_url:
+                    type: string
+                required:
+                  - invitation_id
+                  - invite_url
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskCreateInvitation
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Convidar alguém para a mesa
+      description: Cria um convite por e-mail com o papel dado e devolve o link de
+        aceite. O assento nasce quando a pessoa aceita (`deskAcceptInvitation`).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: E-mail de quem será convidado.
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - admin
+                    - analyst
+                  description: Papel que a pessoa terá ao aceitar.
+              required:
+                - email
+                - role
+  /v1/desk/orgs/{org}/invitations/{invitationId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revoked:
+                    type: boolean
+                required:
+                  - revoked
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskRevokeInvitation
+      tags:
+        - Desk · Mesa
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: invitationId
+          required: true
+          description: Id do convite (de deskListInvitations).
+      summary: Revogar convite pendente
+      description: Cancela um convite ainda não aceito.
+  /v1/desk/orgs/{org}/audit:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        action:
+                          type: string
+                        summary:
+                          type:
+                            - string
+                            - "null"
+                        via:
+                          type: string
+                        actor_member_id:
+                          type:
+                            - string
+                            - "null"
+                        actor_display_name:
+                          type:
+                            - string
+                            - "null"
+                        entity_type:
+                          type:
+                            - string
+                            - "null"
+                        entity_id:
+                          type:
+                            - string
+                            - "null"
+                        created_at:
+                          type: string
+                      required:
+                        - id
+                        - action
+                        - summary
+                        - via
+                        - actor_member_id
+                        - actor_display_name
+                        - entity_type
+                        - entity_id
+                        - created_at
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type:
+                          - string
+                          - "null"
+                      count:
+                        type: number
+                    required:
+                      - next_cursor
+                      - count
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListAudit
+      tags:
+        - Desk · Mesa
+      parameters:
+        - in: query
+          name: entity_id
+          schema:
+            type: string
+            description: Recorta por classe ou cedente (CNPJ).
+        - in: query
+          name: cursor
+          schema:
+            type: string
+            description: Cursor opaco de `meta.next_cursor` da página anterior.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            description: Eventos por página (1–200).
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Trilha de auditoria da mesa
+      description: Trilha de auditoria da mesa, mais recente primeiro, com paginação
+        por cursor. `entity_id` recorta por classe ou cedente (CNPJ).
+  /v1/desk/orgs/{org}/watchlists:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        slug:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type:
+                            - string
+                            - "null"
+                        kind:
+                          type: string
+                        item_count:
+                          type: number
+                      required:
+                        - id
+                        - slug
+                        - name
+                        - description
+                        - kind
+                        - item_count
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListWatchlists
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Watchlists da mesa
+      description: Listas de acompanhamento da mesa, com tipo (`book` = o que a casa
+        gere ou originou; `market` = o que ela observa) e a contagem de
+        posições.
+    post:
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  slug:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type:
+                      - string
+                      - "null"
+                  kind:
+                    type: string
+                  item_count:
+                    type: number
+                required:
+                  - id
+                  - slug
+                  - name
+                  - description
+                  - kind
+                  - item_count
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskCreateWatchlist
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Criar watchlist
+      description: Cria uma watchlist com nome, slug opcional, descrição e tipo
+        (`book` ou `market`).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  description: Nome da watchlist.
+                slug:
+                  type: string
+                  description: Slug estável para a URL; derivado do nome quando omitido.
+                description:
+                  type:
+                    - string
+                    - "null"
+                  description: Descrição livre.
+                kind:
+                  type: string
+                  enum:
+                    - book
+                    - market
+                  description: book = o que a casa gere ou originou; market = o que ela observa
+                    (default).
+              required:
+                - name
+  /v1/desk/orgs/{org}/watchlists/{list}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskDeleteWatchlist
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: list
+          required: true
+          description: Id ou slug da watchlist (de deskListWatchlists).
+      summary: Remover watchlist
+      description: Remove a watchlist e as posições acompanhadas nela.
+  /v1/desk/orgs/{org}/watchlists/{list}/items:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cnpj:
+                          type: string
+                        entity_kind:
+                          type: string
+                        label:
+                          type:
+                            - string
+                            - "null"
+                        relation:
+                          type: string
+                        position:
+                          type: number
+                      required:
+                        - cnpj
+                        - entity_kind
+                        - label
+                        - relation
+                        - position
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListWatchlistItems
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: list
+          required: true
+          description: Id ou slug da watchlist (de deskListWatchlists).
+      summary: Posições acompanhadas na watchlist
+      description: "Posições acompanhadas na watchlist: CNPJ da classe ou do cedente,
+        rótulo, relação com a mesa (`own`/`tracked`) e ordem."
+    post:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  added:
+                    type: number
+                  skipped:
+                    type: number
+                required:
+                  - added
+                  - skipped
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskAddWatchlistItems
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: list
+          required: true
+          description: Id ou slug da watchlist (de deskListWatchlists).
+      summary: Incluir posições na watchlist
+      description: "Inclusão em lote e idempotente: CNPJs já acompanhados são contados
+        em `skipped` em vez de derrubar o lote. Aceita CNPJ com ou sem
+        pontuação."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      cnpj:
+                        type: string
+                        description: CNPJ da classe de FIDC ou do cedente, com ou sem pontuação.
+                      label:
+                        type:
+                          - string
+                          - "null"
+                        description: Apelido da posição na mesa.
+                      entity_kind:
+                        type: string
+                        enum:
+                          - fidc_class
+                          - originator
+                        description: fidc_class (default) ou originator (cedente).
+                      relation:
+                        type: string
+                        enum:
+                          - own
+                          - tracked
+                        description: "O que a classe é PARA A MESA. `own`: a casa gere ou originou —
+                          quebra de limite aqui é operacional. `tracked`
+                          (default): exposição, avaliação ou comparação."
+                    required:
+                      - cnpj
+                  minItems: 1
+                  maxItems: 500
+                  description: Posições a incluir na watchlist (1–500), identificadas por CNPJ.
+              required:
+                - items
+  /v1/desk/orgs/{org}/watchlists/{list}/items/{cnpj}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  removed:
+                    type: boolean
+                required:
+                  - removed
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskRemoveWatchlistItem
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: list
+          required: true
+          description: Id ou slug da watchlist (de deskListWatchlists).
+        - schema:
+            type: string
+          in: path
+          name: cnpj
+          required: true
+          description: CNPJ da classe de FIDC ou do cedente, 14 dígitos.
+      summary: Remover posição da watchlist
+      description: Tira uma posição da watchlist pelo CNPJ.
+  /v1/desk/orgs/{org}/watchlists/{list}/board:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  watchlist:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      slug:
+                        type: string
+                      name:
+                        type: string
+                      kind:
+                        type: string
+                    required:
+                      - id
+                      - slug
+                      - name
+                      - kind
+                  latest_competence:
+                    type:
+                      - string
+                      - "null"
+                    description: Competência mais recente do informe no mercado (YYYY-MM-DD).
+                  columns:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        metric:
+                          type: string
+                        label:
+                          type: string
+                        unit:
+                          type: string
+                        help:
+                          type: string
+                      required:
+                        - metric
+                        - label
+                        - unit
+                        - help
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cnpj:
+                          type: string
+                        entity_kind:
+                          type: string
+                        relation:
+                          type: string
+                          description: "`own` (a casa gere/originou) ou `tracked`."
+                        label:
+                          type:
+                            - string
+                            - "null"
+                        name:
+                          type:
+                            - string
+                            - "null"
+                        reference_date:
+                          type:
+                            - string
+                            - "null"
+                        unknown:
+                          type: boolean
+                          description: True quando o informe não conhece este CNPJ — diferente de conhecer
+                            e estar atrasado.
+                        cells:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              metric:
+                                type: string
+                              value:
+                                type:
+                                  - number
+                                  - "null"
+                              unit:
+                                type: string
+                            required:
+                              - metric
+                              - value
+                              - unit
+                      required:
+                        - cnpj
+                        - entity_kind
+                        - relation
+                        - label
+                        - name
+                        - reference_date
+                        - unknown
+                        - cells
+                required:
+                  - watchlist
+                  - latest_competence
+                  - columns
+                  - rows
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskGetWatchlistBoard
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: list
+          required: true
+          description: Id ou slug da watchlist (de deskListWatchlists).
+      summary: Quadro da watchlist com os números do informe
+      description: "Cruza as posições acompanhadas com o informe mensal da CVM na
+        competência mais recente. Nenhum número é armazenado pela mesa: tudo vem
+        do informe a cada leitura."
+  /v1/desk/orgs/{org}/grid:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  columns:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        metric:
+                          type: string
+                        position:
+                          type: number
+                      required:
+                        - metric
+                        - position
+                  catalog:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        metric:
+                          type: string
+                        label:
+                          type: string
+                        unit:
+                          type: string
+                        help:
+                          type: string
+                      required:
+                        - metric
+                        - label
+                        - unit
+                        - help
+                required:
+                  - columns
+                  - catalog
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskGetGrid
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Colunas da grade e catálogo de métricas disponíveis
+      description: As colunas escolhidas para a grade da mesa e o catálogo de métricas
+        disponíveis, com rótulo, unidade e ajuda de cada uma.
+    put:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  columns:
+                    type: array
+                    items:
+                      type: string
+                required:
+                  - columns
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskSetGrid
+      tags:
+        - Desk · Watchlist
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Definir as colunas da grade
+      description: Define as colunas da grade (até 30 métricas do catálogo de
+        `deskGetGrid`), na ordem dada.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metrics:
+                  type: array
+                  items:
+                    type: string
+                  maxItems: 30
+                  description: Métricas do catálogo de deskGetGrid, na ordem das colunas (até 30).
+              required:
+                - metrics
+  /v1/desk/orgs/{org}/watchlists/{list}/alerts:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        cnpj:
+                          type: string
+                        name:
+                          type:
+                            - string
+                            - "null"
+                        source:
+                          type: string
+                          enum:
+                            - covenant
+                            - rule
+                            - reporting
+                        severity:
+                          type: string
+                          enum:
+                            - info
+                            - attention
+                            - critical
+                        metric:
+                          type: string
+                        value:
+                          type:
+                            - number
+                            - "null"
+                        threshold:
+                          type:
+                            - number
+                            - "null"
+                        distance:
+                          type:
+                            - number
+                            - "null"
+                          description: Quanto falta para cruzar o limiar, na unidade da métrica. Negativo
+                            = já cruzou.
+                        reference_date:
+                          type:
+                            - string
+                            - "null"
+                        title:
+                          type: string
+                        evidence:
+                          type:
+                            - object
+                            - "null"
+                          properties:
+                            doc_id:
+                              type:
+                                - string
+                                - "null"
+                            page:
+                              type:
+                                - number
+                                - "null"
+                            quote:
+                              type:
+                                - string
+                                - "null"
+                          required:
+                            - doc_id
+                            - page
+                            - quote
+                          description: Procedência do limiar no regulamento. Presente só quando a origem é
+                            covenant.
+                        status:
+                          type: string
+                          enum:
+                            - open
+                            - acknowledged
+                            - muted
+                        first_detected_at:
+                          type:
+                            - string
+                            - "null"
+                          description: Primeira vez que este alerta foi observado (ledger append-only).
+                      required:
+                        - key
+                        - cnpj
+                        - name
+                        - source
+                        - severity
+                        - metric
+                        - value
+                        - threshold
+                        - distance
+                        - reference_date
+                        - title
+                        - evidence
+                        - status
+                  meta:
+                    type: object
+                    properties:
+                      count:
+                        type: number
+                    required:
+                      - count
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListAlerts
+      tags:
+        - Desk · Alertas
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: list
+          required: true
+          description: Id ou slug da watchlist (de deskListWatchlists).
+      summary: Alertas da watchlist na competência mais recente
+      description: "Derivados na leitura a partir de três origens: limiar do
+        regulamento da classe (`covenant`), regra configurada pela mesa (`rule`)
+        e classe que parou de reportar (`reporting`). A leitura também REGISTRA
+        no ledger append-only o que ainda não tinha sido observado, e devolve
+        `first_detected_at` — é o que permite dizer 'desde quando' sem
+        reconstruir o passado com as regras de hoje."
+  /v1/desk/orgs/{org}/alert-history:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        alert_key:
+                          type: string
+                        cnpj:
+                          type: string
+                        source:
+                          type: string
+                        severity:
+                          type: string
+                        metric:
+                          type: string
+                        value:
+                          type:
+                            - number
+                            - "null"
+                        threshold:
+                          type:
+                            - number
+                            - "null"
+                        distance:
+                          type:
+                            - number
+                            - "null"
+                        reference_date:
+                          type:
+                            - string
+                            - "null"
+                        title:
+                          type: string
+                        detected_at:
+                          type: string
+                      required:
+                        - alert_key
+                        - cnpj
+                        - source
+                        - severity
+                        - metric
+                        - value
+                        - threshold
+                        - distance
+                        - reference_date
+                        - title
+                        - detected_at
+                  meta:
+                    type: object
+                    properties:
+                      count:
+                        type: number
+                    required:
+                      - count
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListAlertHistory
+      tags:
+        - Desk · Alertas
+      parameters:
+        - in: query
+          name: cnpj
+          schema:
+            type: string
+            description: Recorta por classe (CNPJ).
+        - in: query
+          name: source
+          schema:
+            type: string
+            enum:
+              - covenant
+              - rule
+              - reporting
+            description: "Origem: covenant (regulamento), rule (regra da mesa) ou reporting
+              (parou de reportar)."
+        - in: query
+          name: since
+          schema:
+            type: string
+            description: ISO 8601; devolve só o que disparou depois disso.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            description: Registros a devolver (1–500).
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Ledger de alertas já observados
+      description: "Append-only: cada linha é o registro imutável de um alerta que
+        disparou, com o valor e o LIMIAR vigentes naquele instante. Editar uma
+        regra depois não reescreve o passado. É o insumo do backtest de um sinal
+        (lift, falso positivo, antecedência) e do 'o que mudou desde a última
+        vez'."
+  /v1/desk/orgs/{org}/alerts/{key}/ack:
+    post:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  status:
+                    type: string
+                required:
+                  - key
+                  - status
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskAcknowledgeAlert
+      tags:
+        - Desk · Alertas
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: key
+          required: true
+          description: Chave do alerta (de deskListAlerts).
+      summary: Dar baixa (ou silenciar) um alerta
+      description: A baixa vale para a COMPETÊNCIA do alerta. O mesmo sinal na
+        competência seguinte volta como novo.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - acknowledged
+                    - muted
+                  default: acknowledged
+                  description: acknowledged = visto (default); muted = silenciado nesta
+                    competência.
+  /v1/desk/orgs/{org}/alert-rules:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        metric:
+                          type: string
+                        comparator:
+                          type: string
+                        threshold:
+                          type: number
+                        severity:
+                          type: string
+                        enabled:
+                          type: boolean
+                      required:
+                        - id
+                        - metric
+                        - comparator
+                        - threshold
+                        - severity
+                        - enabled
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListAlertRules
+      tags:
+        - Desk · Alertas
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Regras de alerta da mesa
+      description: "Regras de alerta da mesa: métrica, comparador, limiar na unidade
+        da métrica, severidade e se está ligada."
+    put:
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  metric:
+                    type: string
+                  comparator:
+                    type: string
+                  threshold:
+                    type: number
+                  severity:
+                    type: string
+                  enabled:
+                    type: boolean
+                required:
+                  - id
+                  - metric
+                  - comparator
+                  - threshold
+                  - severity
+                  - enabled
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskUpsertAlertRule
+      tags:
+        - Desk · Alertas
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Criar ou atualizar uma regra de alerta
+      description: "O limiar é informado na UNIDADE DA MÉTRICA: inadimplência de 5%
+        entra como 0.05 (fração), concentração de 60% entra como 60
+        (percentual). O catálogo em `GET /grid` diz a unidade de cada uma."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metric:
+                  type: string
+                  description: Métrica do catálogo de deskGetGrid.
+                comparator:
+                  type: string
+                  enum:
+                    - gt
+                    - lt
+                  description: gt dispara acima do limiar; lt, abaixo.
+                threshold:
+                  type: number
+                  description: "Limiar na UNIDADE da métrica (fração para inadimplência: 0.05 =
+                    5%; percentual para concentração: 60 = 60%)."
+                severity:
+                  type: string
+                  enum:
+                    - info
+                    - attention
+                    - critical
+                  description: Severidade do alerta gerado (default attention).
+                enabled:
+                  type: boolean
+                  description: false desliga a regra sem apagá-la.
+              required:
+                - metric
+                - comparator
+                - threshold
+  /v1/desk/orgs/{org}/alert-rules/{ruleId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskDeleteAlertRule
+      tags:
+        - Desk · Alertas
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: ruleId
+          required: true
+          description: Id da regra (de deskListAlertRules).
+      summary: Remover regra de alerta
+      description: Remove uma regra de alerta. O que já foi registrado no ledger de
+        alertas não muda.
+  /v1/desk/orgs/{org}/notes:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        entity_kind:
+                          type: string
+                        entity_id:
+                          type: string
+                        body:
+                          type: string
+                        author_member_id:
+                          type:
+                            - string
+                            - "null"
+                        author_name:
+                          type:
+                            - string
+                            - "null"
+                        created_at:
+                          type: string
+                        updated_at:
+                          type: string
+                      required:
+                        - id
+                        - entity_kind
+                        - entity_id
+                        - body
+                        - author_member_id
+                        - author_name
+                        - created_at
+                        - updated_at
+                required:
+                  - data
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListNotes
+      tags:
+        - Desk · Notas
+      parameters:
+        - in: query
+          name: entity_id
+          schema:
+            type: string
+            description: Recorta por classe ou cedente (CNPJ).
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            description: Notas a devolver (1–200).
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Notas da mesa
+      description: Notas da mesa, mais recente primeiro. `entity_id` recorta por
+        classe ou cedente (CNPJ).
+    post:
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                required:
+                  - id
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskCreateNote
+      tags:
+        - Desk · Notas
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Escrever nota sobre uma classe ou cedente
+      description: Registra uma nota da mesa sobre uma classe de FIDC ou um cedente,
+        identificado por CNPJ em `entity_id`.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entity_id:
+                  type: string
+                  description: CNPJ da classe de FIDC ou do cedente.
+                entity_kind:
+                  type: string
+                  enum:
+                    - fidc_class
+                    - originator
+                  description: fidc_class (default) ou originator.
+                body:
+                  type: string
+                  minLength: 1
+                  maxLength: 10000
+                  description: Texto da nota (até 10.000 caracteres).
+              required:
+                - entity_id
+                - body
+  /v1/desk/orgs/{org}/notes/{noteId}:
+    delete:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                required:
+                  - deleted
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskDeleteNote
+      tags:
+        - Desk · Notas
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: noteId
+          required: true
+          description: Id da nota (de deskListNotes).
+      summary: Remover nota
+      description: Remove uma nota da mesa.
+  /v1/desk/orgs/{org}/classes/{cnpj}/terms:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        cnpj:
+                          type: string
+                        term:
+                          type: string
+                        label:
+                          type: string
+                        value_num:
+                          type:
+                            - number
+                            - "null"
+                        value_text:
+                          type:
+                            - string
+                            - "null"
+                        unit:
+                          type:
+                            - string
+                            - "null"
+                        doc_id:
+                          type:
+                            - string
+                            - "null"
+                        doc_page:
+                          type:
+                            - number
+                            - "null"
+                        quote:
+                          type:
+                            - string
+                            - "null"
+                        confidence:
+                          type:
+                            - number
+                            - "null"
+                        status:
+                          type: string
+                          enum:
+                            - pending
+                            - confirmed
+                            - rejected
+                        valid_from:
+                          type: string
+                        valid_to:
+                          type:
+                            - string
+                            - "null"
+                      required:
+                        - id
+                        - cnpj
+                        - term
+                        - label
+                        - value_num
+                        - value_text
+                        - unit
+                        - doc_id
+                        - doc_page
+                        - quote
+                        - confidence
+                        - status
+                        - valid_from
+                        - valid_to
+                  meta:
+                    type: object
+                    properties:
+                      terms:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                      - terms
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListRegulationTerms
+      tags:
+        - Desk · Regulamento
+      parameters:
+        - in: query
+          name: include_history
+          schema:
+            type: boolean
+            description: true inclui as linhas já encerradas (histórico do limiar).
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - confirmed
+              - rejected
+            description: Recorta por situação da revisão.
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: cnpj
+          required: true
+          description: CNPJ da classe de FIDC ou do cedente, 14 dígitos.
+      summary: Limiares do regulamento de uma classe
+      description: "Point-in-time: por padrão devolve só as linhas VIGENTES. Toda
+        linha carrega a procedência (documento, página e trecho) e só
+        `confirmed` alimenta os alertas de covenant."
+    post:
+      responses:
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  cnpj:
+                    type: string
+                  term:
+                    type: string
+                  label:
+                    type: string
+                  value_num:
+                    type:
+                      - number
+                      - "null"
+                  value_text:
+                    type:
+                      - string
+                      - "null"
+                  unit:
+                    type:
+                      - string
+                      - "null"
+                  doc_id:
+                    type:
+                      - string
+                      - "null"
+                  doc_page:
+                    type:
+                      - number
+                      - "null"
+                  quote:
+                    type:
+                      - string
+                      - "null"
+                  confidence:
+                    type:
+                      - number
+                      - "null"
+                  status:
+                    type: string
+                    enum:
+                      - pending
+                      - confirmed
+                      - rejected
+                  valid_from:
+                    type: string
+                  valid_to:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - id
+                  - cnpj
+                  - term
+                  - label
+                  - value_num
+                  - value_text
+                  - unit
+                  - doc_id
+                  - doc_page
+                  - quote
+                  - confidence
+                  - status
+                  - valid_from
+                  - valid_to
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskProposeRegulationTerm
+      tags:
+        - Desk · Regulamento
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: cnpj
+          required: true
+          description: CNPJ da classe de FIDC ou do cedente, 14 dígitos.
+      summary: Propor um limiar extraído do regulamento
+      description: "O termo nasce SEMPRE como `pending`, mesmo com confiança alta: só
+        a revisão humana (`deskReviewRegulationTerm`) liga o alerta. Valores
+        numéricos seguem a unidade do dado."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                term:
+                  type: string
+                  enum:
+                    - subordinacao_minima
+                    - inadimplencia_max
+                    - concentracao_cedente_max
+                    - revolvente
+                    - coobrigacao_cedente
+                    - taxa_administracao
+                    - taxa_performance
+                    - benchmark_alvo
+                  description: Qual limiar do regulamento (chave do vocabulário fechado).
+                value_num:
+                  type:
+                    - number
+                    - "null"
+                  description: Valor numérico na unidade declarada (fração para razão; BRL; %
+                    a.a.).
+                value_text:
+                  type:
+                    - string
+                    - "null"
+                  description: Valor em texto quando o limiar não é numérico.
+                unit:
+                  type:
+                    - string
+                    - "null"
+                  enum:
+                    - ratio
+                    - brl
+                    - percent_year
+                    - text
+                    - null
+                  description: "Unidade do valor: ratio, brl, percent_year ou text."
+                doc_id:
+                  type:
+                    - string
+                    - "null"
+                  description: Documento de onde o limiar foi lido (protocolo).
+                doc_page:
+                  type:
+                    - integer
+                    - "null"
+                  description: Página do documento.
+                quote:
+                  type:
+                    - string
+                    - "null"
+                  description: Trecho literal que sustenta o limiar.
+                confidence:
+                  type:
+                    - number
+                    - "null"
+                  minimum: 0
+                  maximum: 1
+                  description: Confiança da extração, de 0 a 1.
+              required:
+                - term
+  /v1/desk/orgs/{org}/terms:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        cnpj:
+                          type: string
+                        term:
+                          type: string
+                        label:
+                          type: string
+                        value_num:
+                          type:
+                            - number
+                            - "null"
+                        value_text:
+                          type:
+                            - string
+                            - "null"
+                        unit:
+                          type:
+                            - string
+                            - "null"
+                        doc_id:
+                          type:
+                            - string
+                            - "null"
+                        doc_page:
+                          type:
+                            - number
+                            - "null"
+                        quote:
+                          type:
+                            - string
+                            - "null"
+                        confidence:
+                          type:
+                            - number
+                            - "null"
+                        status:
+                          type: string
+                          enum:
+                            - pending
+                            - confirmed
+                            - rejected
+                        valid_from:
+                          type: string
+                        valid_to:
+                          type:
+                            - string
+                            - "null"
+                      required:
+                        - id
+                        - cnpj
+                        - term
+                        - label
+                        - value_num
+                        - value_text
+                        - unit
+                        - doc_id
+                        - doc_page
+                        - quote
+                        - confidence
+                        - status
+                        - valid_from
+                        - valid_to
+                  meta:
+                    type: object
+                    properties:
+                      count:
+                        type: number
+                    required:
+                      - count
+                required:
+                  - data
+                  - meta
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskListOrgRegulationTerms
+      tags:
+        - Desk · Regulamento
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - confirmed
+              - rejected
+            description: Recorta por situação da revisão; pending é a fila.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            description: Limiares a devolver.
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+      summary: Limiares da mesa inteira
+      description: "Fila de revisão cross-classe: todo limiar da mesa, mais novo
+        primeiro, com a classe (`cnpj`) em cada linha. `status=pending` é o que
+        ainda espera revisão humana."
+  /v1/desk/orgs/{org}/terms/{termId}/review:
+    post:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  cnpj:
+                    type: string
+                  term:
+                    type: string
+                  label:
+                    type: string
+                  value_num:
+                    type:
+                      - number
+                      - "null"
+                  value_text:
+                    type:
+                      - string
+                      - "null"
+                  unit:
+                    type:
+                      - string
+                      - "null"
+                  doc_id:
+                    type:
+                      - string
+                      - "null"
+                  doc_page:
+                    type:
+                      - number
+                      - "null"
+                  quote:
+                    type:
+                      - string
+                      - "null"
+                  confidence:
+                    type:
+                      - number
+                      - "null"
+                  status:
+                    type: string
+                    enum:
+                      - pending
+                      - confirmed
+                      - rejected
+                  valid_from:
+                    type: string
+                  valid_to:
+                    type:
+                      - string
+                      - "null"
+                required:
+                  - id
+                  - cnpj
+                  - term
+                  - label
+                  - value_num
+                  - value_text
+                  - unit
+                  - doc_id
+                  - doc_page
+                  - quote
+                  - confidence
+                  - status
+                  - valid_from
+                  - valid_to
+        default:
+          description: Erro (RFC 9457 application/problem+json)
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  status:
+                    type: number
+                  detail:
+                    type: string
+                  code:
+                    type: string
+                required:
+                  - title
+                  - status
+      operationId: deskReviewRegulationTerm
+      tags:
+        - Desk · Regulamento
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: org
+          required: true
+          description: Id ou slug da organização (de deskGetMe).
+        - schema:
+            type: string
+          in: path
+          name: termId
+          required: true
+          description: Id do limiar (de deskListOrgRegulationTerms).
+      summary: Confirmar ou rejeitar um limiar proposto
+      description: Confirmar FECHA a linha vigente do mesmo (classe, termo) e abre a
+        nova — nada é sobrescrito, para continuar auditável qual limiar valia
+        quando cada alerta disparou.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                decision:
+                  type: string
+                  enum:
+                    - confirmed
+                    - rejected
+                  description: confirmed liga o limiar aos alertas; rejected descarta a proposta.
+              required:
+                - decision
