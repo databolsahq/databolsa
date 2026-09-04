@@ -1,0 +1,206 @@
+/**
+ * Converte cada operação do OpenAPI num comando da CLI — o análogo do
+ * `buildTools()` do MCP (packages/core/mcp/src/tools.ts). Parâmetros de path viram
+ * argumentos posicionais (na ordem declarada); parâmetros de query viram
+ * `--flags`. Sem lógica de negócio: só descreve a superfície e monta a ajuda.
+ */
+import type { Operation, ParamSpec } from "./openapi";
+
+export interface CommandSpec {
+  operationId: string;
+  /** chave do spec, ex.: `/v1/stocks/{ticker}` */
+  path: string;
+  /** Verbo HTTP — escrita (post/put/patch/delete) também vira comando. */
+  method: "get" | "post" | "put" | "patch" | "delete";
+  summary?: string;
+  description?: string;
+  tags: string[];
+  /** params `in: path`, na ordem — preenchidos por posicionais. */
+  positionals: ParamSpec[];
+  /** params `in: query` E `in: body` — ambos por `--flags` (o executor separa). */
+  options: ParamSpec[];
+}
+
+export function buildCommands(operations: Operation[]): Map<string, CommandSpec> {
+  const map = new Map<string, CommandSpec>();
+  for (const op of operations) {
+    map.set(op.operationId, {
+      operationId: op.operationId,
+      path: op.path,
+      method: op.method ?? "get",
+      summary: op.summary,
+      description: op.description,
+      tags: op.tags,
+      positionals: op.params.filter((p) => p.in === "path"),
+      options: op.params.filter((p) => p.in === "query" || p.in === "body"),
+    });
+  }
+  return map;
+}
+
+/** Busca tolerante: operationId exato, depois case-insensitive. */
+export function findCommand(commands: Map<string, CommandSpec>, name: string): CommandSpec | undefined {
+  const exact = commands.get(name);
+  if (exact) return exact;
+  const lower = name.toLowerCase();
+  for (const [id, spec] of commands) {
+    if (id.toLowerCase() === lower) return spec;
+  }
+  return undefined;
+}
+
+function paramSuffix(p: ParamSpec): string {
+  const bits: string[] = [];
+  if (p.required) bits.push("obrigatório");
+  if (p.enum && p.enum.length) bits.push(`opções: ${p.enum.join(", ")}`);
+  if (p.default !== undefined) bits.push(`default: ${String(p.default)}`);
+  return bits.length ? ` [${bits.join("; ")}]` : "";
+}
+
+function typeLabel(p: ParamSpec): string {
+  if (p.enum && p.enum.length) return "enum";
+  return p.type;
+}
+
+/**
+ * Marca/casca da CLI — parametrizada para a casca fina do Advisor
+ * (databolsa-advisor) reutilizar este motor com outro binário, envs e exemplos.
+ * O default é a CLI core; setCliBranding() troca ANTES de montar qualquer texto.
+ */
+export interface CliBranding {
+  bin: string;
+  title: string;
+  blurb: string;
+  envUrl: string;
+  envKey: string;
+  /** Env opcional cujo valor vai no header `x-databolsa-workspace` (organização em que agir com chave pessoal). */
+  envWorkspace?: string;
+  defaultApi: string;
+  keyHint: string;
+  examples: string[];
+}
+
+let BRANDING: CliBranding = {
+  bin: "databolsa",
+  title: "DataBolsa CLI",
+  blurb: "cliente de terminal sobre a Serving API aberta.",
+  envUrl: "DATABOLSA_API_URL",
+  envKey: "DATABOLSA_API_KEY",
+  defaultApi: "https://api.databolsa.com",
+  keyHint: "(crie a chave em databolsa.com/conta)",
+  examples: [
+    "databolsa getObjectHistory pub_3e80862b6163669c --facts close --limit 5",
+    "databolsa screenStocks --sector Bancos --limit 20",
+    "databolsa getStockIndicators PETR4 --json | jq .data",
+  ],
+};
+
+export function setCliBranding(branding: CliBranding): void {
+  BRANDING = branding;
+}
+
+export function cliBranding(): CliBranding {
+  return BRANDING;
+}
+
+export function usageLine(spec: CommandSpec): string {
+  const parts = [BRANDING.bin, spec.operationId];
+  for (const p of spec.positionals) parts.push(`<${p.name}>`);
+  if (spec.options.length) parts.push("[opções]");
+  return parts.join(" ");
+}
+
+/** Ajuda detalhada de um comando (vai para stdout em `--help`). */
+export function commandHelp(spec: CommandSpec): string {
+  const lines: string[] = [];
+  const headline = spec.summary || spec.description;
+  if (headline) lines.push(headline, "");
+  lines.push(`Uso: ${usageLine(spec)}`, "");
+
+  if (spec.positionals.length) {
+    lines.push("Argumentos:");
+    const width = Math.max(...spec.positionals.map((p) => p.name.length));
+    for (const p of spec.positionals) {
+      const desc = p.description ? ` — ${p.description}` : "";
+      lines.push(`  ${p.name.padEnd(width)}  (${typeLabel(p)})${desc}${paramSuffix(p)}`);
+    }
+    lines.push("");
+  }
+
+  if (spec.options.length) {
+    lines.push("Opções:");
+    const labels = spec.options.map((p) => `--${p.name} <${typeLabel(p)}>`);
+    const width = Math.max(...labels.map((l) => l.length));
+    spec.options.forEach((p, i) => {
+      const desc = p.description ? ` — ${p.description}` : "";
+      lines.push(`  ${labels[i]!.padEnd(width)}  ${desc}${paramSuffix(p)}`.trimEnd());
+    });
+    lines.push("");
+  }
+
+  // Operação de upload: atalho --file lê o arquivo local (sem base64 manual).
+  if (spec.options.some((p) => p.in === "body" && p.name === "content_base64")) {
+    lines.push("Upload: use --file <caminho> para ler o arquivo local (preenche content_base64 e filename).", "");
+  }
+
+  lines.push("Globais: --json  --help, -h  --api-url <url>");
+  return lines.join("\n") + "\n";
+}
+
+/** Lista todas as operações, agrupadas por tag (vai para stdout em `--list`). */
+export function listText(commands: Map<string, CommandSpec>, apiOrigin: string): string {
+  const byTag = new Map<string, CommandSpec[]>();
+  for (const spec of commands.values()) {
+    const tag = spec.tags[0] ?? "outros";
+    const list = byTag.get(tag) ?? [];
+    list.push(spec);
+    byTag.set(tag, list);
+  }
+
+  const allIds = [...commands.keys()];
+  const width = allIds.length ? Math.max(...allIds.map((id) => id.length)) : 0;
+
+  const lines: string[] = [
+    `${BRANDING.title} — ${commands.size} operações (API: ${apiOrigin})`,
+    "",
+  ];
+  for (const tag of [...byTag.keys()].sort()) {
+    lines.push(`${tag}`);
+    for (const spec of byTag.get(tag)!.sort((a, b) => a.operationId.localeCompare(b.operationId))) {
+      lines.push(`  ${spec.operationId.padEnd(width)}  ${spec.summary ?? ""}`.trimEnd());
+    }
+    lines.push("");
+  }
+  lines.push(`Detalhe de uma operação: ${BRANDING.bin} <operação> --help`);
+  return lines.join("\n") + "\n";
+}
+
+export function topUsage(modules?: Record<string, string>): string {
+  const b = BRANDING;
+  const envWidth = Math.max(b.envUrl.length, b.envKey.length);
+  const mods = modules && Object.keys(modules).length
+    ? `\nAtalhos de contrato (não indicam instalação no workspace):\n${Object.entries(modules).map(([k, v]) => `  ${b.bin} ${k} <operação>   ${v}\n  ${b.bin} ${k} --list`).join("\n")}\n`
+    : "";
+  return `${b.title} — ${b.blurb}
+
+Uso:
+  ${b.bin} <operação> [argumentos] [opções]
+  ${b.bin} --list                 lista todas as operações
+  ${b.bin} <operação> --help      ajuda de uma operação
+${mods}
+Opções globais:
+  --json            saída JSON crua (para piping/jq)
+  --api-url <url>   sobrescreve ${b.envUrl}
+  --help, -h        esta ajuda
+  --version         versão da CLI
+
+Ambiente:
+  ${b.envUrl.padEnd(envWidth)}   origem da API (default ${b.defaultApi})
+  ${b.envKey.padEnd(envWidth)}   bearer; obrigatório na API hospedada${b.envWorkspace ? `
+  ${b.envWorkspace.padEnd(envWidth)}   organização em que agir (com chave pessoal)` : ""}
+  ${" ".repeat(envWidth)}   ${b.keyHint}
+
+Exemplos:
+${b.examples.map((e) => `  ${e}`).join("\n")}
+`;
+}

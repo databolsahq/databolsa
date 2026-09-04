@@ -1,0 +1,38 @@
+{
+  "name": "databolsa",
+  "version": "3.10.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/core/sdk",
+    "packages/core/cli",
+    "packages/core/mcp",
+    "extensions/advisor/advisor-sdk",
+    "extensions/advisor/advisor-cli",
+    "extensions/advisor/advisor-mcp",
+    "extensions/wallet/wallet-sdk",
+    "extensions/wallet/wallet-cli",
+    "extensions/wallet/wallet-mcp",
+    "extensions/credit/credit-sdk",
+    "extensions/credit/credit-cli",
+    "extensions/credit/credit-mcp"
+  ],
+  "scripts": {
+    "typecheck": "bun run --filter '*' typecheck",
+    "cli": "bun run packages/core/cli/src/index.ts",
+    "advisor-cli": "bun run extensions/advisor/advisor-cli/src/index.ts",
+    "mcp:dev": "bun run packages/core/mcp/src/index.ts",
+    "mcp:inspect": "bunx @modelcontextprotocol/inspector bun run packages/core/mcp/src/stdio.ts",
+    "advisor-mcp:dev": "bun run extensions/advisor/advisor-mcp/src/index.ts",
+    "gen:api-types": "bun run --cwd packages/core/sdk gen:schema",
+    "gen:api-types:advisor": "bun run --cwd extensions/advisor/advisor-sdk gen:schema",
+    "gen:api-types:wallet": "bun run --cwd extensions/wallet/wallet-sdk gen:schema",
+    "test:packages": "node scripts/smoke-packages.mjs --offline",
+    "credit-cli": "bun run extensions/credit/credit-cli/src/index.ts",
+    "credit-mcp:dev": "bun run extensions/credit/credit-mcp/src/index.ts",
+    "gen:api-types:credit": "bun run --cwd extensions/credit/credit-sdk gen:schema"
+  },
+  "overrides": {
+    "zod": "^3.25.76"
+  }
+}

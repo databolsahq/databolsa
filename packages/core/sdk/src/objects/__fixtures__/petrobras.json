@@ -1,0 +1,256 @@
+{
+  "id": "pub_b58cbecf6730bf83",
+  "redirected_from": null,
+  "has_ambiguous_key": false,
+  "kind": "company",
+  "subkind": null,
+  "name": "PETRÓLEO BRASILEIRO S.A. - PETROBRAS",
+  "anchor_type": "cnpj",
+  "anchor_value": "33000167000101",
+  "cnpj": "33000167000101",
+  "cd_cvm": "9512",
+  "isin": null,
+  "tickers": [
+    "PETR3",
+    "PETR4"
+  ],
+  "share_classes": [
+    {
+      "ticker": "PETR3",
+      "share_class": "ON"
+    },
+    {
+      "ticker": "PETR4",
+      "share_class": "PN"
+    }
+  ],
+  "keys": [
+    {
+      "key_type": "cnpj",
+      "key_value": "33000167000101",
+      "confidence": "high",
+      "is_anchor": true
+    },
+    {
+      "key_type": "cd_cvm",
+      "key_value": "9512",
+      "confidence": "high",
+      "is_anchor": false
+    }
+  ],
+  "links": [
+    {
+      "rel": "issued",
+      "direction": "out",
+      "shape": "event",
+      "relationship_count": 37,
+      "assertion_count": 37,
+      "relationship_count_ever": 37,
+      "count": 37,
+      "count_ever": 37,
+      "as_of": null,
+      "note": "",
+      "domain_kinds": [],
+      "range_kinds": [],
+      "traverse": {
+        "operation": "listObjectLinks",
+        "id": "pub_b58cbecf6730bf83",
+        "rel": "issued",
+        "direction": "out",
+        "at": null
+      }
+    },
+    {
+      "rel": "rates",
+      "direction": "in",
+      "shape": "event",
+      "relationship_count": 2,
+      "assertion_count": 2,
+      "relationship_count_ever": 2,
+      "count": 2,
+      "count_ever": 2,
+      "as_of": null,
+      "note": "",
+      "domain_kinds": [],
+      "range_kinds": [],
+      "traverse": {
+        "operation": "listObjectLinks",
+        "id": "pub_b58cbecf6730bf83",
+        "rel": "rates",
+        "direction": "in",
+        "at": null
+      }
+    }
+  ],
+  "aspects": [
+    {
+      "name": "corporate_events",
+      "function": "market.corporate_events.list",
+      "description": "",
+      "grain": "paper",
+      "shape": "event",
+      "operation": "listCorporateEvents",
+      "parameter": "ticker",
+      "value": "PETR3",
+      "defaults": {
+        "ticker": "PETR3"
+      },
+      "available": true
+    },
+    {
+      "name": "corporate_events",
+      "function": "market.corporate_events.list",
+      "description": "",
+      "grain": "paper",
+      "shape": "event",
+      "operation": "listCorporateEvents",
+      "parameter": "ticker",
+      "value": "PETR4",
+      "defaults": {
+        "ticker": "PETR4"
+      },
+      "available": true
+    },
+    {
+      "name": "indicators",
+      "function": "market.indicators.latest",
+      "description": "",
+      "grain": "paper",
+      "shape": "snapshot",
+      "operation": "getStockIndicators",
+      "parameter": "ticker",
+      "value": "PETR3",
+      "defaults": {
+        "ticker": "PETR3"
+      },
+      "available": true
+    },
+    {
+      "name": "indicators",
+      "function": "market.indicators.latest",
+      "description": "",
+      "grain": "paper",
+      "shape": "snapshot",
+      "operation": "getStockIndicators",
+      "parameter": "ticker",
+      "value": "PETR4",
+      "defaults": {
+        "ticker": "PETR4"
+      },
+      "available": true
+    },
+    {
+      "name": "documents",
+      "function": "documents.company.list",
+      "description": "",
+      "grain": "object",
+      "shape": "event",
+      "operation": "listCompanyDocuments",
+      "parameter": "company",
+      "value": "9512",
+      "defaults": {
+        "company": "9512"
+      },
+      "available": true
+    },
+    {
+      "name": "debentures",
+      "function": "credit.debentures.list",
+      "description": "",
+      "grain": "object",
+      "shape": "static",
+      "operation": "listDebentures",
+      "parameter": "issuerCnpj",
+      "value": "33000167000101",
+      "defaults": {
+        "issuerCnpj": "33000167000101"
+      },
+      "available": true
+    },
+    {
+      "name": "insider",
+      "function": "market.insider.history",
+      "description": "",
+      "grain": "object",
+      "shape": "series",
+      "operation": "listInsiderMoves",
+      "parameter": "ticker",
+      "value": "PETR3",
+      "defaults": {
+        "ticker": "PETR3"
+      },
+      "available": true
+    },
+    {
+      "name": "ratings",
+      "function": "credit.ratings.list",
+      "description": "",
+      "grain": "object",
+      "shape": "event",
+      "operation": "listCreditRatings",
+      "parameter": "issuerCnpj",
+      "value": "33000167000101",
+      "defaults": {
+        "issuerCnpj": "33000167000101"
+      },
+      "available": true
+    },
+    {
+      "name": "facts",
+      "function": "objects.facts.latest",
+      "description": "",
+      "grain": "object",
+      "shape": "snapshot",
+      "operation": "getObjectFacts",
+      "parameter": "id",
+      "value": "pub_b58cbecf6730bf83",
+      "defaults": {
+        "id": "pub_b58cbecf6730bf83"
+      },
+      "available": true
+    },
+    {
+      "name": "properties",
+      "function": "objects.properties.get",
+      "description": "",
+      "grain": "object",
+      "shape": "static",
+      "operation": "getObjectProperties",
+      "parameter": "id",
+      "value": "pub_b58cbecf6730bf83",
+      "defaults": {
+        "id": "pub_b58cbecf6730bf83"
+      },
+      "available": true
+    }
+  ],
+  "declared_facts": [
+    {
+      "name": "close",
+      "label": "Fechamento ajustado",
+      "unit": "brl",
+      "cadence": "daily",
+      "period": "none",
+      "grain": "paper",
+      "series": "PETR3"
+    },
+    {
+      "name": "close",
+      "label": "Fechamento ajustado",
+      "unit": "brl",
+      "cadence": "daily",
+      "period": "none",
+      "grain": "paper",
+      "series": "PETR4"
+    },
+    {
+      "name": "roe",
+      "label": "ROE",
+      "unit": "ratio",
+      "cadence": "quarterly",
+      "period": "ttm_12m",
+      "grain": "object",
+      "series": null
+    }
+  ]
+}

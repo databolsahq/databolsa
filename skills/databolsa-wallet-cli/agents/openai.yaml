@@ -1,0 +1,4 @@
+interface:
+  display_name: "DataBolsa Wallet CLI"
+  short_description: "Use and manage DataBolsa Wallet safely"
+  default_prompt: "Use $databolsa-wallet-cli to inspect my portfolios safely and confirm any write before running it."

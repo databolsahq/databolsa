@@ -1,0 +1,143 @@
+{
+  "id": "pub_3e80862b6163669c",
+  "redirected_from": null,
+  "has_ambiguous_key": false,
+  "kind": "equity_security",
+  "subkind": "pn",
+  "name": "PETR4 (PN)",
+  "anchor_type": "ticker",
+  "anchor_value": "PETR4",
+  "cnpj": null,
+  "cd_cvm": null,
+  "isin": null,
+  "tickers": [
+    "PETR4",
+    "PETR4F"
+  ],
+  "share_classes": [
+    {
+      "ticker": "PETR4",
+      "share_class": "PN"
+    },
+    {
+      "ticker": "PETR4F",
+      "share_class": "PN"
+    }
+  ],
+  "keys": [
+    {
+      "key_type": "ticker",
+      "key_value": "PETR4",
+      "confidence": "high",
+      "is_anchor": true
+    }
+  ],
+  "links": [
+    {
+      "rel": "holds",
+      "direction": "in",
+      "shape": "snapshot",
+      "relationship_count": 294,
+      "assertion_count": 294,
+      "relationship_count_ever": 294,
+      "count": 294,
+      "count_ever": 294,
+      "as_of": "2026-06-30",
+      "note": "",
+      "domain_kinds": [],
+      "range_kinds": [],
+      "traverse": {
+        "operation": "listObjectLinks",
+        "id": "pub_3e80862b6163669c",
+        "rel": "holds",
+        "direction": "in",
+        "at": "2026-06-30"
+      }
+    },
+    {
+      "rel": "issued",
+      "direction": "in",
+      "shape": "event",
+      "relationship_count": 1,
+      "assertion_count": 1,
+      "relationship_count_ever": 1,
+      "count": 1,
+      "count_ever": 1,
+      "as_of": null,
+      "note": "",
+      "domain_kinds": [],
+      "range_kinds": [],
+      "traverse": {
+        "operation": "listObjectLinks",
+        "id": "pub_3e80862b6163669c",
+        "rel": "issued",
+        "direction": "in",
+        "at": null
+      }
+    }
+  ],
+  "aspects": [
+    {
+      "name": "corporate_events",
+      "function": "market.corporate_events.list",
+      "description": "",
+      "grain": "object",
+      "shape": "event",
+      "operation": "listCorporateEvents",
+      "parameter": "ticker",
+      "value": "PETR4",
+      "defaults": {
+        "ticker": "PETR4"
+      },
+      "available": true
+    },
+    {
+      "name": "indicators",
+      "function": "market.indicators.latest",
+      "description": "",
+      "grain": "object",
+      "shape": "snapshot",
+      "operation": "getStockIndicators",
+      "parameter": "ticker",
+      "value": "PETR4",
+      "defaults": {
+        "ticker": "PETR4"
+      },
+      "available": true
+    },
+    {
+      "name": "facts",
+      "function": "objects.facts.latest",
+      "description": "",
+      "grain": "object",
+      "shape": "snapshot",
+      "operation": "getObjectFacts",
+      "parameter": "id",
+      "value": "pub_3e80862b6163669c",
+      "defaults": {
+        "id": "pub_3e80862b6163669c"
+      },
+      "available": true
+    }
+  ],
+  "declared_facts": [
+    {
+      "name": "close",
+      "label": "Fechamento ajustado",
+      "unit": "brl",
+      "cadence": "daily",
+      "period": "none",
+      "grain": "object",
+      "series": "PETR4"
+    },
+    {
+      "name": "pl",
+      "label": "P/L",
+      "unit": "x",
+      "cadence": "quarterly",
+      "period": "ttm_12m",
+      "grain": "object",
+      "series": null
+    }
+  ]
+}
