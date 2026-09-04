@@ -1,0 +1,60 @@
+{
+  "name": "@databolsa/wallet-sdk",
+  "version": "3.13.0",
+  "databolsa": {
+    "group": "extensions",
+    "kind": "client",
+    "public": true,
+    "layer": "extension",
+    "extension": "databolsa.wallet",
+    "component": "sdk"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "SDK TypeScript tipado da Wallet do DataBolsa (carteiras por workspace), gerado a partir do contrato OpenAPI da Wallet.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "gen:schema": "openapi-typescript ../../../api/openapi-wallet.yaml -o src/schema.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "rm -rf dist && bun build src/index.ts --target browser --format esm --outfile dist/index.js && tsc --declaration --emitDeclarationOnly --outDir dist --noEmit false",
+    "prepack": "bun run build"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "openapi-typescript": "^7",
+    "typescript": "^5.9.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Rodrigo Klosowski",
+  "homepage": "https://github.com/databolsahq/databolsa/tree/main/extensions/wallet/wallet-sdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/databolsahq/databolsa.git",
+    "directory": "extensions/wallet/wallet-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/databolsahq/databolsa/issues"
+  },
+  "keywords": [
+    "databolsa",
+    "wallet",
+    "carteira",
+    "sdk",
+    "typescript",
+    "openapi"
+  ]
+}
