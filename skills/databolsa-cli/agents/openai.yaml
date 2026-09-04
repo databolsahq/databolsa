@@ -1,0 +1,4 @@
+interface:
+  display_name: "DataBolsa CLI"
+  short_description: "Research markets with the DataBolsa CLI"
+  default_prompt: "Use $databolsa-cli to research this market question with current, sourced data."

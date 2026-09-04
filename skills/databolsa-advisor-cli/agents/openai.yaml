@@ -1,0 +1,4 @@
+interface:
+  display_name: "DataBolsa Advisor CLI"
+  short_description: "Work safely with DataBolsa Advisor"
+  default_prompt: "Use $databolsa-advisor-cli to inspect this advisory office safely and confirm any write before running it."

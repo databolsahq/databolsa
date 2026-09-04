@@ -1,0 +1,59 @@
+{
+  "name": "@databolsa/credit-cli",
+  "version": "3.11.0",
+  "databolsa": {
+    "group": "extensions",
+    "kind": "client",
+    "public": true,
+    "layer": "extension",
+    "extension": "databolsa.credit",
+    "component": "cli"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "CLI da mesa de crédito do DataBolsa (Credit Desk) — um comando por operação do contrato OpenAPI da mesa. Autentica com a chave pessoal (db_live_...).",
+  "bin": {
+    "databolsa-credit": "dist/index.js"
+  },
+  "scripts": {
+    "dev": "bun src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "build": "bun build src/index.ts --target node --outfile dist/index.js && sed -i '1s|^#!.*|#!/usr/bin/env node|' dist/index.js && cp ../../../api/openapi-credit.yaml dist/openapi.yaml",
+    "prepack": "bun run build"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Rodrigo Klosowski",
+  "homepage": "https://github.com/databolsahq/databolsa/tree/main/extensions/credit/credit-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/databolsahq/databolsa.git",
+    "directory": "extensions/credit/credit-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/databolsahq/databolsa/issues"
+  },
+  "keywords": [
+    "databolsa",
+    "credit",
+    "credito-privado",
+    "fidc",
+    "cli",
+    "openapi"
+  ]
+}
